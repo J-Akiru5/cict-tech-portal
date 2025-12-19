@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* Maroon Primary */
+        --color-maroon-700: 127 29 29;
+        --color-maroon-800: 92 21 21;
+        --color-maroon-900: 59 13 13;
+        
+        /* Gold Accent */
+        --color-gold-400: 251 191 36;
+        --color-gold-500: 212 160 23;
+        --color-gold-600: 184 134 11;
+        
+        /* Glass Effects */
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-bg-light: rgba(255, 255, 255, 0.12);
+        --glass-border: rgba(255, 255, 255, 0.15);
+        --glass-border-light: rgba(255, 255, 255, 0.25);
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: 'Inter', 'Figtree', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+@layer components {
+    /* Glassmorphic Card */
+    .glass-card {
+        @apply bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-glass;
+    }
+
+    .glass-card-hover {
+        @apply glass-card transition-all duration-300 hover:bg-white/15 hover:border-white/30 hover:shadow-glass-lg hover:-translate-y-1;
+    }
+
+    /* Glassmorphic Dark Card */
+    .glass-card-dark {
+        @apply bg-maroon-900/40 backdrop-blur-xl border border-maroon-700/30 rounded-2xl;
+    }
+
+    /* Primary Button - Maroon with Gold accent */
+    .btn-primary {
+        @apply bg-gradient-to-r from-maroon-700 to-maroon-800 text-white font-semibold px-6 py-3 rounded-xl 
+               shadow-lg hover:shadow-glow-maroon transition-all duration-300 
+               hover:-translate-y-0.5 active:translate-y-0;
+    }
+
+    /* Gold Accent Button */
+    .btn-gold {
+        @apply bg-gradient-to-r from-gold-500 to-gold-600 text-maroon-900 font-semibold px-6 py-3 rounded-xl 
+               shadow-lg hover:shadow-glow-gold transition-all duration-300 
+               hover:-translate-y-0.5 active:translate-y-0;
+    }
+
+    /* Glass Button */
+    .btn-glass {
+        @apply bg-white/10 backdrop-blur-md border border-white/20 text-white font-medium px-6 py-3 rounded-xl 
+               transition-all duration-300 hover:bg-white/20 hover:border-white/30;
+    }
+
+    /* Gradient Text */
+    .text-gradient-gold {
+        @apply bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 bg-clip-text text-transparent;
+    }
+
+    .text-gradient-maroon {
+        @apply bg-gradient-to-r from-maroon-500 to-maroon-700 bg-clip-text text-transparent;
+    }
+
+    /* Hero Background */
+    .hero-gradient {
+        background: linear-gradient(135deg, 
+            rgba(127, 29, 29, 0.95) 0%, 
+            rgba(92, 21, 21, 0.98) 50%, 
+            rgba(59, 13, 13, 1) 100%);
+    }
+
+    /* Animated Background Orbs */
+    .bg-orb {
+        @apply absolute rounded-full blur-3xl opacity-30;
+        animation: float 8s ease-in-out infinite;
+    }
+
+    .bg-orb-gold {
+        @apply bg-orb bg-gradient-to-br from-gold-400 to-gold-600;
+    }
+
+    .bg-orb-maroon {
+        @apply bg-orb bg-gradient-to-br from-maroon-500 to-maroon-700;
+    }
+
+    /* Input Glass Style */
+    .input-glass {
+        @apply bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-white 
+               placeholder:text-white/50 focus:outline-none focus:border-gold-500/50 focus:ring-2 
+               focus:ring-gold-500/20 transition-all duration-300;
+    }
+
+    /* Navigation Link */
+    .nav-link {
+        @apply text-white/70 hover:text-white transition-colors duration-200 font-medium;
+    }
+
+    .nav-link-active {
+        @apply text-gold-400 font-semibold;
+    }
+
+    /* Section Title */
+    .section-title {
+        @apply text-3xl md:text-4xl font-bold text-white mb-4;
+    }
+
+    /* Badge Styles */
+    .badge-gold {
+        @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium 
+               bg-gold-500/20 text-gold-400 border border-gold-500/30;
+    }
+
+    .badge-maroon {
+        @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium 
+               bg-maroon-700/20 text-maroon-400 border border-maroon-700/30;
+    }
+
+    /* Shimmer Effect */
+    .shimmer {
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 100%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 2s linear infinite;
+    }
+}
+
+@layer utilities {
+    /* Glass Blur Levels */
+    .blur-glass {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .blur-glass-lg {
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+    }
+
+    /* Gradient Border */
+    .gradient-border {
+        position: relative;
+    }
+
+    .gradient-border::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(135deg, rgba(212, 160, 23, 0.5), rgba(127, 29, 29, 0.5));
+        -webkit-mask: 
+            linear-gradient(#fff 0 0) content-box, 
+            linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    /* Hide Scrollbar */
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Custom Scrollbar */
+    .scrollbar-custom::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: rgba(212, 160, 23, 0.3);
+        border-radius: 3px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+        background: rgba(212, 160, 23, 0.5);
+    }
+}
