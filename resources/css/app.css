@@ -40,8 +40,55 @@
         @apply bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-glass;
     }
 
+                /* Premium Glassmorphic Card with Advanced Hover Effects */
     .glass-card-hover {
-        @apply glass-card transition-all duration-300 hover:bg-white/15 hover:border-white/30 hover:shadow-glass-lg hover:-translate-y-1;
+        @apply glass-card relative overflow-hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .glass-card-hover:hover {
+            @apply bg-white/10 border-gold-400/40 -translate-y-2 scale-105;
+            box-shadow: 0 20px 60px -15px rgba(251, 191, 36, 0.3);
+        }
+        
+        /* Animated gradient background on hover */
+        .glass-card-hover::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(127, 29, 29, 0.2) 0%, transparent 50%, rgba(212, 160, 23, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .glass-card-hover:hover::before {
+            opacity: 1;
+        }
+        
+        /* Glow effect */
+        .glass-card-hover::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(127, 29, 29, 0.4));
+            border-radius: inherit;
+            opacity: 0;
+            filter: blur(20px);
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .glass-card-hover:hover::after {
+            opacity: 0.2;
+        }
+        
+        /* Ensure content stays above pseudo-elements */
+        .glass-card-hover>* {
+            position: relative;
+            z-index: 10;
     }
 
     /* Glassmorphic Dark Card */
@@ -434,4 +481,33 @@
             rgba(128, 0, 0, 0.15) 0%,
             transparent 70%);
     pointer-events: none;
+}
+/* Ticker Tape Animation */
+@keyframes ticker {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-33.333%);
+    }
+}
+
+.animate-ticker {
+    animation: ticker 30s linear infinite;
+}
+
+/* Shine Sweep Effect for Glass Cards */
+.shine-sweep {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+    transform: translateX(-100%) skewX(-12deg);
+    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 20;
+}
+
+.glass-card-hover:hover .shine-sweep {
+    transform: translateX(100%) skewX(-12deg);
 }

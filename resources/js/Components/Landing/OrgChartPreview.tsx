@@ -16,10 +16,10 @@ export default function OrgChartPreview() {
     return (
         <section 
             data-scroll-section 
-            className="relative py-32"
+            className="relative py-32 bg-gradient-to-b from-black to-black"
         >
-            {/* Background */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+            {/* Background orb for subtle variation */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-maroon-950/20 to-transparent" />
 
             <div className="relative z-10 mx-auto max-w-7xl px-6">
                 {/* Section Header */}

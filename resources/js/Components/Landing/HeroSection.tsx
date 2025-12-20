@@ -22,6 +22,7 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
     const subtitleRef = useRef<HTMLParagraphElement>(null);
     const ctaRef = useRef<HTMLDivElement>(null);
     const scrollHintRef = useRef<HTMLDivElement>(null);
+    const tickerRef = useRef<HTMLDivElement>(null); // Ticker tape watermark
 
     // State to control visibility
     const [showContent, setShowContent] = useState(true);
@@ -50,6 +51,11 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
 
             gsap.set(logoContainerRef.current, { scale: 1.5 });
 
+            // Force refresh ScrollTrigger after setup
+            setTimeout(() => {
+                ScrollTrigger.refresh(true);
+            }, 100);
+
             // MASTER TIMELINE (Pinned)
             const masterTl = gsap.timeline({
                 scrollTrigger: {
@@ -72,6 +78,7 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
             }, 0);
 
             masterTl.to(scrollHintRef.current, { opacity: 0, y: 50, duration: 1 }, 0);
+            masterTl.to(tickerRef.current, { opacity: 0, y: -30, duration: 1.5 }, 0);
 
             masterTl.to(badgeRef.current, { opacity: 1, y: 0, duration: 2 }, 0.5);
 
@@ -110,7 +117,7 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
     return (
         <section 
             ref={sectionRef}
-            className="relative min-h-screen bg-black overflow-hidden"
+            className="relative min-h-screen bg-black overflow-hidden z-0"
         >
             {/* Background Layers */}
             <div 
@@ -131,6 +138,25 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
                     background: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.6) 100%)',
                 }}
             />
+
+            {/* Ticker Tape Watermark */}
+            <div
+                ref={tickerRef}
+                className="absolute top-32 left-0 right-0 z-50 overflow-hidden pointer-events-none"
+            >
+                <div className="flex animate-ticker whitespace-nowrap">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center gap-8 px-8 text-gold-400/20 text-3xl font-bold tracking-[0.3em] uppercase">
+                            <span>College of Information and Communications Technology</span>
+                            <span className="text-white/15">•</span>
+                            <span>Dingle Campus</span>
+                            <span className="text-white/15">•</span>
+                            <span>Iloilo State University of Fisheries Science and Technology</span>
+                            <span className="text-white/15">•</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
             {/* Logo */}
             <div 
@@ -154,7 +180,7 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
                 className={`fixed inset-x-0 z-40 flex flex-col items-center justify-end pb-20 pointer-events-none transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}
                 style={{ top: '25%', bottom: '0' }}
             >
-                <div className="text-center w-full max-w-7xl mx-auto px-4">
+                <div className="text-center w-full max-w-7xl mx-auto px-4" style={{ transformOrigin: 'center center' }}>
 
                     {/* Badge */}
                     <div ref={badgeRef} className="mb-6 flex justify-center">
@@ -167,7 +193,7 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
                     <div 
                         ref={headlineLeftRef}
                         className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white uppercase mb-2"
-                        style={{ fontFamily: "'Oswald', sans-serif" }}
+                        style={{ fontFamily: "'Oswald', sans-serif", transformOrigin: 'center center' }}
                     >
                         YOUR GATEWAY TO
                     </div>
@@ -176,7 +202,7 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
                     <div 
                         ref={headlineRightRef}
                         className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-200 uppercase mb-4"
-                        style={{ fontFamily: "'Oswald', sans-serif" }}
+                        style={{ fontFamily: "'Oswald', sans-serif", transformOrigin: 'center center' }}
                     >
                         STUDENT EXCELLENCE
                     </div>
@@ -253,13 +279,57 @@ export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
                 </div>
             </div>
 
-            {/* Bottom Gradient */}
-            <div
-                className="absolute bottom-0 left-0 right-0 h-64 z-60 pointer-events-none"
-                style={{
-                    background: 'linear-gradient(to bottom, transparent 0%, rgb(60, 9, 21) 100%)'
-                }}
-            />
+            {/* IGP Tracker Card - Lower Left */}
+            <a
+                href="https://cict-dingle.onrender.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-8 left-8 z-50 group"
+            >
+                <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/5 backdrop-blur-xl p-6 shadow-2xl transition-all duration-500 hover:bg-white/10 hover:border-gold-400/40 hover:shadow-gold-500/30 hover:-translate-y-2 hover:scale-105 w-72">
+                    {/* Animated gradient background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-maroon-700/20 via-transparent to-gold-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                    {/* Glow effect */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-gold-400 to-maroon-500 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-all duration-500" />
+
+                    <div className="relative z-10">
+                        {/* Icon/Badge */}
+                        <div className="mb-4 flex items-center justify-between">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/20 border border-gold-400/30">
+                                <svg className="w-4 h-4 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                                <span className="text-xs font-bold text-gold-300 uppercase tracking-wider">Shop</span>
+                            </div>
+                            <svg className="w-5 h-5 text-white/40 group-hover:text-gold-400 transition-colors duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-gold-300 transition-colors duration-300">
+                            CICT Shop
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-sm text-white/60 mb-4 leading-relaxed">
+                            Order customized merchandise—apparels, cups, mugs & more. Access printing services with sublimation printing available.
+                        </p>
+
+                        {/* CTA */}
+                        <div className="flex items-center gap-2 text-gold-400 font-semibold text-sm group-hover:gap-3 transition-all duration-300">
+                            <span>Order Now</span>
+                            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    {/* Shine effect on hover */}
+                    <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+                </div>
+            </a>
         </section>
     );
 }

@@ -5,12 +5,20 @@ interface HexCell {
     cx: number;
     cy: number;
     path: string;
-    // Physics state stored in mutable objects to avoid react render cycle
     physics: {
         currentLift: number;
         velocity: number;
-        targetLift: number;
+        activeColor: string; // Track which color is currently affecting this hex
     };
+}
+
+interface PhantomCursor {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    color: string;
+    glowFilterId: string;
 }
 
 export default function HoneycombBackground() {
@@ -24,16 +32,26 @@ export default function HoneycombBackground() {
     const EFFECT_RADIUS = 100;
     
     // Physics Config
-    const SPRING_STIFFNESS = 0.03; // Lower = softer spring (slower return)
-    const DAMPING = 0.95; // Higher = more oscillation/trail
-    const MAX_LIFT = 30; // Pixels
-    const MOUSE_FORCE = 2.0; // How fast it reacts to mouse
+    const SPRING_STIFFNESS = 0.03;
+    const DAMPING = 0.95;
+    const MAX_LIFT = 30;
 
-    // Cells Ref to allow access inside RAF without dependency hell
+    // Phantom Cursor Config
+    const PHANTOM_SPEED = 1.5; // Pixels per frame
+    const PHANTOM_WANDER_STRENGTH = 0.3; // Random direction change
+
+    // Cells Ref
     const cellsRef = useRef<HexCell[]>([]);
     
-    // DOM Refs for direct manipulation
+    // DOM Refs
     const pathRefs = useRef<{ [key: string]: SVGPathElement | null }>({});
+
+    // 3 Phantom Cursors: Maroon, Gold, White
+    const phantomCursorsRef = useRef<PhantomCursor[]>([
+        { x: 200, y: 200, vx: 1, vy: 0.5, color: '#ff0040', glowFilterId: 'underglow-maroon' },   // Maroon
+        { x: 600, y: 400, vx: -0.8, vy: 1, color: '#ffc107', glowFilterId: 'underglow-gold' },    // Gold
+        { x: 1000, y: 300, vx: 0.5, vy: -1, color: '#ffffff', glowFilterId: 'underglow-white' },  // White
+    ]);
 
     // Track mouse
     useEffect(() => {
@@ -65,7 +83,7 @@ export default function HoneycombBackground() {
         };
     }, []);
 
-    // Generate Grid on Resize
+    // Generate Grid
     useMemo(() => {
         const cells: HexCell[] = [];
         if (dimensions.width === 0) {
@@ -104,93 +122,121 @@ export default function HoneycombBackground() {
                     cx, 
                     cy, 
                     path,
-                    physics: { currentLift: 0, velocity: 0, targetLift: 0 }
+                    physics: { currentLift: 0, velocity: 0, activeColor: '#ff0040' }
                 });
             }
         }
         cellsRef.current = cells;
     }, [dimensions]);
 
-    // Animation Loop (RAF)
+    // Animation Loop
     useEffect(() => {
         let animationFrameId: number;
 
         const animate = () => {
             const mouse = mouseRef.current;
+            const phantoms = phantomCursorsRef.current;
+            const { width, height } = dimensions;
 
-            cellsRef.current.forEach(cell => {
-                const dx = cell.cx - mouse.x;
-                const dy = cell.cy - mouse.y;
-                const distDist = dx * dx + dy * dy; // Distance squared
-                const dist = Math.sqrt(distDist);
+            // Update Phantom Cursor Positions (Random Wandering)
+            phantoms.forEach(phantom => {
+                // Apply random direction change
+                phantom.vx += (Math.random() - 0.5) * PHANTOM_WANDER_STRENGTH;
+                phantom.vy += (Math.random() - 0.5) * PHANTOM_WANDER_STRENGTH;
 
-                // Calculate Target Force based on Mouse Proximity
-                let target = 0;
-                if (dist < EFFECT_RADIUS) {
-                    const intensity = 1 - dist / EFFECT_RADIUS;
-                    // Ease the intensity: exponential for sharper center
-                    target = intensity * intensity * MAX_LIFT;
+                // Clamp velocity
+                const speed = Math.sqrt(phantom.vx ** 2 + phantom.vy ** 2);
+                if (speed > PHANTOM_SPEED) {
+                    phantom.vx = (phantom.vx / speed) * PHANTOM_SPEED;
+                    phantom.vy = (phantom.vy / speed) * PHANTOM_SPEED;
                 }
 
-                // Apply Physics
-                // Force = (Target - Current) * SpeedFactor
-                // But specifically for "Trail", we want the mouse to "kick" the velocity,
-                // and the spring to pull it back.
-                
-                // Spring Physics:
-                // Force = Spring + Damping
-                // Spring pushes towards Target.
-                // Actually, let's treat 'target' as the equilibrium position for the spring momentarily.
-                
+                // Update position
+                phantom.x += phantom.vx;
+                phantom.y += phantom.vy;
+
+                // Bounce off walls
+                if (phantom.x < 0 || phantom.x > width) phantom.vx *= -1;
+                if (phantom.y < 0 || phantom.y > height) phantom.vy *= -1;
+
+                // Clamp to bounds
+                phantom.x = Math.max(0, Math.min(width, phantom.x));
+                phantom.y = Math.max(0, Math.min(height, phantom.y));
+            });
+
+            // Process each hex cell
+            cellsRef.current.forEach(cell => {
+                // Find closest cursor (mouse or phantom)
+                let closestDist = Infinity;
+                let closestIntensity = 0;
+                let closestColor = '#ff0040'; // Default maroon
+                let closestFilterId = 'underglow-maroon';
+
+                // Check real mouse
+                const mouseDx = cell.cx - mouse.x;
+                const mouseDy = cell.cy - mouse.y;
+                const mouseDist = Math.sqrt(mouseDx ** 2 + mouseDy ** 2);
+                if (mouseDist < EFFECT_RADIUS && mouseDist < closestDist) {
+                    closestDist = mouseDist;
+                    closestIntensity = Math.pow(1 - mouseDist / EFFECT_RADIUS, 2);
+                    closestColor = '#ff0040'; // Mouse uses maroon
+                    closestFilterId = 'underglow-maroon';
+                }
+
+                // Check phantoms
+                phantoms.forEach(phantom => {
+                    const dx = cell.cx - phantom.x;
+                    const dy = cell.cy - phantom.y;
+                    const dist = Math.sqrt(dx ** 2 + dy ** 2);
+                    if (dist < EFFECT_RADIUS && dist < closestDist) {
+                        closestDist = dist;
+                        closestIntensity = Math.pow(1 - dist / EFFECT_RADIUS, 2);
+                        closestColor = phantom.color;
+                        closestFilterId = phantom.glowFilterId;
+                    }
+                });
+
+                const target = closestIntensity * MAX_LIFT;
+                cell.physics.activeColor = closestColor;
+
+                // Spring Physics
                 const force = (target - cell.physics.currentLift) * SPRING_STIFFNESS;
                 cell.physics.velocity += force;
                 cell.physics.velocity *= DAMPING;
                 cell.physics.currentLift += cell.physics.velocity;
-                
-                // Clamp slightly to prevent micro-jitter near zero? 
+
                 if (Math.abs(cell.physics.currentLift) < 0.01 && Math.abs(cell.physics.velocity) < 0.01 && target === 0) {
                     cell.physics.currentLift = 0;
                     cell.physics.velocity = 0;
                 }
 
-                // Render Update
+                // Render
                 const element = pathRefs.current[cell.id];
                 const underglowElement = pathRefs.current[`glow-${cell.id}`];
                 
                 if (element && underglowElement) {
-                    // Only update DOM if moving significantly or active
                     if (cell.physics.currentLift > 0.1 || cell.physics.velocity !== 0) {
-                        const lift = cell.physics.currentLift; // Negative Y is up? 
-                        // User wanted "Lift". translateY negative.
-                        // My variable currentLift is positive magnitude.
-                        
-                        const translateY = -lift; 
+                        const lift = cell.physics.currentLift;
+                        const translateY = -lift;
                         const scale = 1 + (lift / MAX_LIFT) * 0.1;
                         
                         element.style.transform = `translateY(${translateY.toFixed(2)}px) scale(${scale.toFixed(3)})`;
-                        
-                        // Opacity / brightness based on lift height
-                        // Resting opacity: 0.2. Max opacity: 1.
+
                         const opacity = 0.2 + (lift / MAX_LIFT) * 0.8;
                         element.style.opacity = opacity.toFixed(2);
                         
-                        // Update Underglow
-                        // Underglow intensity matches lift
+                        // Update glow color and opacity
+                        underglowElement.setAttribute('fill', closestColor);
                         const glowOpacity = (lift / MAX_LIFT) * 0.8;
                         underglowElement.style.opacity = glowOpacity.toFixed(2);
-                        
-                        // Set active attributes strictly on change? 
-                        // To allow "Pure Dark" floating hex:
+
                         if (lift > 1) {
-                           // Set fill to opaque dark metal if not already
-                             element.setAttribute('fill', 'url(#metal-dark)');
-                             // Set stroke
-                             element.setAttribute('stroke', '#333');
-                             element.setAttribute('stroke-width', '1');
-                             element.style.filter = 'url(#lift-shadow-deep)';
+                            element.setAttribute('fill', 'url(#metal-dark)');
+                            element.setAttribute('stroke', '#333');
+                            element.setAttribute('stroke-width', '1');
+                            element.style.filter = 'url(#lift-shadow-deep)';
                         }
                     } else {
-                        // Reset to resting state if settled
                         if (element.style.transform !== '') {
                             element.style.transform = '';
                             element.style.opacity = '0.2';
@@ -211,7 +257,7 @@ export default function HoneycombBackground() {
 
         animate();
         return () => cancelAnimationFrame(animationFrameId);
-    }, [dimensions]); // Re-bind RAF if dimensions (and thus cells) change
+    }, [dimensions]);
 
     return (
         <div
@@ -225,14 +271,9 @@ export default function HoneycombBackground() {
                         <stop offset="100%" stopColor="#0a0a0a" />
                     </linearGradient>
 
-                    <filter id="underglow-intense" x="-50%" y="-50%" width="200%" height="200%">
+                    {/* Underglow filters for each color */}
+                    <filter id="underglow-base" x="-50%" y="-50%" width="200%" height="200%">
                         <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
-                        <feFlood floodColor="#ff0040" floodOpacity="1" result="color" />
-                        <feComposite in="color" in2="blur" operator="in" result="glow" />
-                        <feMerge>
-                            <feMergeNode in="glow" />
-                            <feMergeNode in="glow" />
-                        </feMerge>
                     </filter>
                     
                     <filter id="lift-shadow-deep" x="-50%" y="-50%" width="200%" height="200%">
@@ -249,8 +290,8 @@ export default function HoneycombBackground() {
                             d={cell.path}
                             fill="#ff0040"
                             stroke="none"
-                            filter="url(#underglow-intense)"
-                            opacity="0" // Controlled by JS
+                            filter="url(#underglow-base)"
+                            opacity="0"
                             style={{
                                 transformOrigin: `${cell.cx}px ${cell.cy}px`,
                                 transform: `scale(0.9)`
@@ -271,7 +312,7 @@ export default function HoneycombBackground() {
                             strokeWidth="0.5"
                             style={{
                                 transformOrigin: `${cell.cx}px ${cell.cy}px`,
-                                opacity: 0.2 // Initial resting opacity
+                                opacity: 0.2
                             }}
                         />
                     ))}

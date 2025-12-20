@@ -31,6 +31,31 @@ Route::get('/org-chart', [OfficerController::class, 'index'])->name('org-chart')
 Route::get('/schedule', [OfficerDutyController::class, 'index'])->name('schedule');
 Route::get('/bulletin', [AchievementController::class, 'index'])->name('bulletin');
 Route::get('/cbl', fn() => Inertia::render('Public/CBL'))->name('cbl');
+Route::get('/timeline', function() {
+    $highlights = \App\Models\CouncilHighlight::select('council_highlights.*')
+        ->leftJoin('academic_years', 'council_highlights.academic_year_id', '=', 'academic_years.id')
+        ->orderBy('academic_years.year_start', 'desc')
+        ->orderBy('council_highlights.display_order')
+        ->with('academicYear')
+        ->get()
+        ->map(function($h) {
+            return [
+                'id' => $h->id,
+                'year' => $h->academicYear ? $h->academicYear->year_start : 2024,
+                'term_label' => $h->term_label,
+                'title' => $h->title,
+                'description' => $h->description,
+                'type' => $h->type,
+                'icon' => $h->icon ?? $h->getTypeIcon(),
+                'color' => $h->accent_color ?? $h->getTypeColor(),
+                'is_featured' => $h->is_featured,
+            ];
+        });
+    
+    return Inertia::render('Public/TimelineDemo', [
+        'highlights' => $highlights,
+    ]);
+})->name('timeline');
 
 /*
 |--------------------------------------------------------------------------

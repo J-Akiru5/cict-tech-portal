@@ -33,7 +33,7 @@ export default function AnnouncementsPreview() {
     return (
         <section 
             data-scroll-section 
-            className="relative py-32"
+            className="relative py-32 bg-gradient-to-b from-black via-maroon-950/30 to-black"
         >
             {/* Background Orb */}
             <div 

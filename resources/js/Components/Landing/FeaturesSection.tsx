@@ -89,15 +89,8 @@ export default function FeaturesSection() {
     return (
         <section 
             ref={sectionRef}
-            className="relative min-h-screen bg-gradient-to-b from-maroon-950 via-maroon-900 to-black"
+            className="relative min-h-screen bg-gradient-to-b from-black via-maroon-900/40 to-black"
         >
-            {/* Gradient transition from hero */}
-            <div 
-                className="absolute -top-32 left-0 right-0 h-64 pointer-events-none"
-                style={{
-                    background: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgb(60, 9, 21) 100%)'
-                }}
-            />
 
             <div className="relative z-10 mx-auto max-w-7xl px-6 py-32">
                 {/* Split Layout: Left sticky label + Right scrolling content */}
