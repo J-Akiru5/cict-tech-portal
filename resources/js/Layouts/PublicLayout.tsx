@@ -1,6 +1,6 @@
 import { PropsWithChildren, useLayoutEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import { gsap, ScrollTrigger } from '../hooks/useGSAP';
+import { gsap, ScrollTrigger } from '@/Hooks/useGSAP';
 
 /**
  * PublicLayout - GSAP-powered layout for public-facing pages
@@ -52,11 +52,11 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                     <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-6 py-3 backdrop-blur-xl transition-all duration-300">
                         {/* Logo */}
                         <Link href="/" className="flex items-center gap-3 group">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 transition-transform duration-300 group-hover:scale-110">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-maroon-800 border border-gold-500/30 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
                                 <img 
                                     src="/assets/logo/CICT_Logo.svg" 
                                     alt="CICT Logo" 
-                                    className="h-8 w-8 object-contain brightness-0 invert filter"
+                                    className="h-9 w-9 object-contain"
                                 />
                             </div>
                             <span className="text-lg font-semibold text-white tracking-tight group-hover:text-gold-400 transition-colors">

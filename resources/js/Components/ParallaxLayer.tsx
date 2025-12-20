@@ -1,5 +1,5 @@
 import React, { forwardRef, PropsWithChildren } from 'react';
-import { useParallax } from '../hooks/useGSAP';
+import { useParallax } from '@/Hooks/useGSAP';
 
 interface ParallaxLayerProps extends PropsWithChildren {
     speed?: number;
