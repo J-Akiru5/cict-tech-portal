@@ -28,6 +28,9 @@
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
+        "framer-motion": "^12.23.26",
+        "gsap": "^3.14.2",
+        "locomotive-scroll": "^4.1.4",
         "sweetalert2": "^11.26.10"
     }
 }

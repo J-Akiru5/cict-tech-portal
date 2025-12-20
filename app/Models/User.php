@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -17,24 +17,31 @@ use Spatie\Permission\Traits\HasRoles;
  */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @var list<string>
      */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'student_id',
+        'course',
+        'year_level',
+        'section',
+        'phone',
+        'emergency_contact',
+        'emergency_phone',
+        'photo',
+        'bio',
+        'facebook_url',
+        'is_active',
+        'last_login_at',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
      */
     protected $hidden = [
         'password',
@@ -43,14 +50,105 @@ class User extends Authenticatable
 
     /**
      * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Course options
+     */
+    public const COURSES = [
+        'BSIT' => 'Bachelor of Science in Information Technology',
+        'BSCS' => 'Bachelor of Science in Computer Science',
+        'ACT' => 'Associate in Computer Technology',
+    ];
+
+    /**
+     * Year level options
+     */
+    public const YEAR_LEVELS = [
+        '1st' => '1st Year',
+        '2nd' => '2nd Year',
+        '3rd' => '3rd Year',
+        '4th' => '4th Year',
+    ];
+
+    /**
+     * Relationships
+     */
+    public function officer(): HasOne
+    {
+        return $this->hasOne(Officer::class);
+    }
+
+    public function events(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'event_attendances')
+            ->withPivot(['status', 'checked_in_at', 'check_in_method', 'notes'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Accessors
+     */
+    public function getPhotoUrlAttribute(): string
+    {
+        if ($this->photo) {
+            return asset('storage/' . $this->photo);
+        }
+        
+        // Default avatar with initials
+        $initials = collect(explode(' ', $this->name))
+            ->map(fn($part) => strtoupper($part[0] ?? ''))
+            ->take(2)
+            ->join('');
+        
+        return "https://ui-avatars.com/api/?name={$initials}&background=d4a017&color=7f1d1d&bold=true&size=150";
+    }
+
+    public function getFullCourseNameAttribute(): ?string
+    {
+        return self::COURSES[$this->course] ?? $this->course;
+    }
+
+    /**
+     * Role helpers
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('main-admin');
+    }
+
+    public function isOfficer(): bool
+    {
+        return $this->hasAnyRole(['sc-president', 'sc-officer', 'sc-secretary', 'sc-treasurer']);
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->hasRole('student');
+    }
+
+    /**
+     * Get the dashboard route based on user role
+     */
+    public function getDashboardRoute(): string
+    {
+        if ($this->hasRole('main-admin')) {
+            return 'admin.dashboard';
+        }
+        
+        if ($this->hasAnyRole(['sc-president', 'sc-officer', 'sc-secretary', 'sc-treasurer', 'sc-adviser'])) {
+            return 'officer.dashboard';
+        }
+        
+        return 'student.dashboard';
     }
 }

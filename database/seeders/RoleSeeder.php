@@ -2,240 +2,183 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
 /**
- * RoleSeeder - Creates the 7 user roles for the CICT IT Tech Portal
+ * RoleSeeder
  * 
- * Role Hierarchy:
- * 1. Main Administrator - Full system access
- * 2. College Dean - Oversight and approval
- * 3. SC Adviser (Faculty) - Advisory and moderation
- * 4. SC President - Near-admin access for SC operations
- * 5. SC Officers - Position-specific access
- * 6. Students - Basic portal access
- * 7. Public - Guest access (landing page only)
+ * Seeds roles, permissions, and demo users for testing.
  */
 class RoleSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create Permissions
+        // Create permissions
         $permissions = [
-            // User Management
-            'manage-users',
-            'create-users',
-            'edit-users',
-            'delete-users',
-            'view-users',
-            
-            // Role Management
-            'manage-roles',
-            'assign-roles',
-            
-            // System Configuration
-            'manage-system',
-            'manage-academic-years',
-            'manage-programs',
-            
             // Announcements
-            'create-announcements',
-            'edit-announcements',
-            'delete-announcements',
-            'view-announcements',
+            'view announcements',
+            'create announcements',
+            'edit announcements',
+            'delete announcements',
+            'publish announcements',
             
-            // Events & Attendance
-            'manage-events',
-            'create-events',
-            'edit-events',
-            'delete-events',
-            'view-events',
-            'record-attendance',
-            'view-attendance',
-            'view-own-attendance',
+            // Officers
+            'view officers',
+            'manage officers',
             
-            // Officer Duties
-            'manage-officer-duties',
-            'submit-duty-excuse',
-            'approve-duty-excuse',
-            'manage-fines',
+            // Schedule
+            'view schedule',
+            'manage schedule',
             
-            // Org Chart
-            'manage-org-chart',
-            'view-org-chart',
-            
-            // Financial Records (Treasurer)
-            'manage-finances',
-            'view-finances',
-            'record-payments',
-            'generate-financial-reports',
-            
-            // Secretary Notes
-            'manage-secretary-notes',
-            'view-secretary-notes',
-            
-            // President Section
-            'manage-president-section',
-            'view-president-section',
-            
-            // Student Features
-            'submit-feedback',
-            'view-own-feedback',
+            // Users
+            'view users',
+            'manage users',
+            'manage roles',
             
             // Reports
-            'generate-reports',
-            'view-reports',
+            'view reports',
+            'create reports',
             
-            // CBL
-            'manage-cbl',
-            'view-cbl',
-            
-            // AI Features
-            'use-ai-assistant',
-            'generate-ai-reports',
+            // Admin
+            'access admin panel',
+            'manage system settings',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Create Roles and Assign Permissions
-        
-        // 1. Main Administrator - Full Access
-        $mainAdmin = Role::create(['name' => 'main-admin']);
-        $mainAdmin->givePermissionTo(Permission::all());
+        // Create roles with permissions
+        $rolePermissions = [
+            'main-admin' => $permissions, // All permissions
+            
+            'dean' => [
+                'view announcements', 'view officers', 'view schedule',
+                'view users', 'view reports', 'access admin panel',
+            ],
+            
+            'sc-adviser' => [
+                'view announcements', 'create announcements', 'edit announcements',
+                'view officers', 'manage officers', 'view schedule', 'manage schedule',
+                'view users', 'view reports', 'create reports',
+            ],
+            
+            'sc-president' => [
+                'view announcements', 'create announcements', 'edit announcements', 'publish announcements',
+                'view officers', 'manage officers', 'view schedule', 'manage schedule',
+                'view users', 'view reports', 'create reports',
+            ],
+            
+            'sc-secretary' => [
+                'view announcements', 'create announcements', 'edit announcements',
+                'view officers', 'view schedule', 'view reports', 'create reports',
+            ],
+            
+            'sc-treasurer' => [
+                'view announcements', 'view officers', 'view schedule',
+                'view reports', 'create reports',
+            ],
+            
+            'sc-officer' => [
+                'view announcements', 'create announcements',
+                'view officers', 'view schedule', 'view reports',
+            ],
+            
+            'student' => [
+                'view announcements', 'view officers', 'view schedule',
+            ],
+            
+            'public' => [
+                'view announcements',
+            ],
+        ];
 
-        // 2. College Dean - Oversight
-        $dean = Role::create(['name' => 'dean']);
-        $dean->givePermissionTo([
-            'view-users',
-            'view-announcements',
-            'view-events',
-            'view-attendance',
-            'view-org-chart',
-            'view-finances',
-            'view-secretary-notes',
-            'view-president-section',
-            'view-reports',
-            'view-cbl',
-            'use-ai-assistant',
-        ]);
+        foreach ($rolePermissions as $roleName => $perms) {
+            $role = Role::firstOrCreate(['name' => $roleName]);
+            $role->syncPermissions($perms);
+            $this->command->info("Created role: {$roleName} with " . count($perms) . " permissions");
+        }
 
-        // 3. SC Adviser (Faculty) - Advisory + Approval
-        $adviser = Role::create(['name' => 'sc-adviser']);
-        $adviser->givePermissionTo([
-            'view-users',
-            'view-announcements',
-            'edit-announcements',
-            'view-events',
-            'view-attendance',
-            'approve-duty-excuse',
-            'view-org-chart',
-            'view-finances',
-            'view-secretary-notes',
-            'view-president-section',
-            'view-reports',
-            'view-cbl',
-            'use-ai-assistant',
-        ]);
+        // Create demo users
+        $demoUsers = [
+            [
+                'name' => 'Main Administrator',
+                'email' => 'admin@cict.edu',
+                'password' => Hash::make('password'),
+                'role' => 'main-admin',
+            ],
+            [
+                'name' => 'SC Adviser',
+                'email' => 'adviser@cict.edu',
+                'password' => Hash::make('password'),
+                'role' => 'sc-adviser',
+            ],
+            [
+                'name' => 'SC President',
+                'email' => 'president@cict.edu',
+                'password' => Hash::make('password'),
+                'role' => 'sc-president',
+                'student_id' => '2024-00001',
+                'course' => 'BSIT',
+                'year_level' => '4th',
+            ],
+            [
+                'name' => 'SC Secretary',
+                'email' => 'secretary@cict.edu',
+                'password' => Hash::make('password'),
+                'role' => 'sc-secretary',
+                'student_id' => '2024-00002',
+                'course' => 'BSIT',
+                'year_level' => '3rd',
+            ],
+            [
+                'name' => 'SC Officer',
+                'email' => 'officer@cict.edu',
+                'password' => Hash::make('password'),
+                'role' => 'sc-officer',
+                'student_id' => '2024-00003',
+                'course' => 'BSCS',
+                'year_level' => '3rd',
+            ],
+            [
+                'name' => 'Regular Student',
+                'email' => 'student@cict.edu',
+                'password' => Hash::make('password'),
+                'role' => 'student',
+                'student_id' => '2024-00100',
+                'course' => 'BSIT',
+                'year_level' => '2nd',
+            ],
+        ];
 
-        // 4. SC President - Near-Admin for SC Operations
-        $president = Role::create(['name' => 'sc-president']);
-        $president->givePermissionTo([
-            'view-users',
-            'create-announcements',
-            'edit-announcements',
-            'delete-announcements',
-            'view-announcements',
-            'manage-events',
-            'create-events',
-            'edit-events',
-            'delete-events',
-            'view-events',
-            'record-attendance',
-            'view-attendance',
-            'manage-officer-duties',
-            'approve-duty-excuse',
-            'manage-fines',
-            'view-org-chart',
-            'view-finances',
-            'view-secretary-notes',
-            'manage-president-section',
-            'view-president-section',
-            'generate-reports',
-            'view-reports',
-            'view-cbl',
-            'use-ai-assistant',
-            'generate-ai-reports',
-        ]);
+        foreach ($demoUsers as $userData) {
+            $role = $userData['role'];
+            unset($userData['role']);
+            
+            $user = User::firstOrCreate(
+                ['email' => $userData['email']],
+                $userData
+            );
+            
+            $user->syncRoles([$role]);
+            $this->command->info("Created user: {$userData['email']} with role: {$role}");
+        }
 
-        // 5. SC Officers - Position-Specific
-        $officer = Role::create(['name' => 'sc-officer']);
-        $officer->givePermissionTo([
-            'view-announcements',
-            'view-events',
-            'record-attendance',
-            'view-attendance',
-            'submit-duty-excuse',
-            'view-org-chart',
-            'view-cbl',
-            'use-ai-assistant',
-        ]);
-
-        // 5a. Secretary - Special Officer Role
-        $secretary = Role::create(['name' => 'sc-secretary']);
-        $secretary->givePermissionTo([
-            'view-announcements',
-            'create-announcements',
-            'view-events',
-            'record-attendance',
-            'view-attendance',
-            'submit-duty-excuse',
-            'view-org-chart',
-            'manage-secretary-notes',
-            'view-secretary-notes',
-            'view-cbl',
-            'use-ai-assistant',
-            'generate-reports',
-        ]);
-
-        // 5b. Treasurer - Special Officer Role
-        $treasurer = Role::create(['name' => 'sc-treasurer']);
-        $treasurer->givePermissionTo([
-            'view-announcements',
-            'view-events',
-            'record-attendance',
-            'view-attendance',
-            'submit-duty-excuse',
-            'view-org-chart',
-            'manage-finances',
-            'view-finances',
-            'record-payments',
-            'generate-financial-reports',
-            'view-cbl',
-            'use-ai-assistant',
-            'generate-ai-reports',
-        ]);
-
-        // 6. Students - Basic Access
-        $student = Role::create(['name' => 'student']);
-        $student->givePermissionTo([
-            'view-announcements',
-            'view-events',
-            'view-own-attendance',
-            'view-org-chart',
-            'submit-feedback',
-            'view-own-feedback',
-            'view-cbl',
-            'use-ai-assistant',
-        ]);
-
-        // 7. Public - No permissions (guest access is handled by routes)
-        Role::create(['name' => 'public']);
+        $this->command->info("\n✅ Roles and demo users created successfully!");
+        $this->command->info("Demo login credentials (password for all: 'password'):");
+        $this->command->table(
+            ['Email', 'Role'],
+            collect($demoUsers)->map(fn($u) => [$u['email'], $u['role'] ?? 'N/A'])->toArray()
+        );
     }
 }

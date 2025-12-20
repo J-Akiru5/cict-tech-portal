@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        'do_spaces' => [
+        'driver' => 's3',
+        'key' => env('DO_SPACES_KEY'),
+        'secret' => env('DO_SPACES_SECRET'),
+        'region' => env('DO_SPACES_REGION'),
+        'bucket' => env('DO_SPACES_BUCKET'),
+        'endpoint' => env('DO_SPACES_ENDPOINT'),
+        'root' => env('DO_SPACES_ROOT', 'cict-portal'), // Project prefix
+        'url' => env('DO_SPACES_URL'),
+        'visibility' => 'public',
+        'throw' => true,
+    ],
+
     ],
 
     /*
