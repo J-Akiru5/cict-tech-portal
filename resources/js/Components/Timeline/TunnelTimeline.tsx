@@ -1,13 +1,17 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect, useLayoutEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { ArrowLeftIcon, HomeIcon } from '@heroicons/react/24/outline';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register GSAP plugins
+gsap.registerPlugin(ScrollTrigger);
 
 /**
  * TunnelTimeline - A Maroon/Gold styled scroll-driven 3D grid tunnel
  * 
- * As the user scrolls, the camera flies forward through a wireframe tunnel,
- * passing floating cards representing timeline events from the database.
+ * REFACTORED: Now uses GSAP ScrollTrigger instead of Framer Motion
+ * for reliable scroll tracking and animation.
  */
 
 // Timeline event data type (from database)
@@ -43,41 +47,52 @@ const fallbackEvents: TimelineEvent[] = [
     { year: '2022', title: 'IT Week Innovation', description: 'First hybrid IT Week event.', color: 'gold' },
 ];
 
-// Timeline card component
+// === VISIBILITY CONSTANTS ===
+const CARD_SPACING = 1000;     // Z-distance between cards
+const FADE_IN_START = -1500;   // Start fading in (far away)
+const FADE_IN_END = -500;      // Fully visible here
+const FADE_OUT_START = 100;    // Start fading out (passing camera)
+const FADE_OUT_END = 600;      // Completely gone
+const RUNWAY_BUFFER = 3000;    // Extra depth to ensure last card clears
+
+// === HELPER FUNCTIONS ===
+const calculateOpacity = (z: number): number => {
+  if (z < FADE_IN_START) return 0;
+  if (z < FADE_IN_END) return (z - FADE_IN_START) / (FADE_IN_END - FADE_IN_START);
+  if (z < FADE_OUT_START) return 1;
+  if (z < FADE_OUT_END) return 1 - (z - FADE_OUT_START) / (FADE_OUT_END - FADE_OUT_START);
+  return 0;
+};
+
+const calculateScale = (z: number): number => {
+  if (z < FADE_IN_START) return 0.5;
+  if (z > 0) return 1;
+  return 0.5 + 0.5 * ((z - FADE_IN_START) / (0 - FADE_IN_START));
+};
+
+// Timeline card component (now using regular divs instead of motion.div)
 interface TimelineCardProps {
     event: TimelineEvent;
     index: number;
-    worldZ: MotionValue<number>;
+  worldZ: number;
     total: number;
 }
 
-function TimelineCard({ event, index, worldZ }: TimelineCardProps) {
-    // FIX: Reduced spacing to 1000px to eliminate visibility gaps
-    // This ensures overlapping visibility ranges between cards
-    const cardSpacing = 1000;
-    const baseZ = -600 - (index * cardSpacing);
+function TimelineCard({ event, index, worldZ, total }: TimelineCardProps) {
+  const baseZ = -1000 - (index * CARD_SPACING);
+  // actualZ is for visibility calculations (relative to camera)
+  // Since parent container moves by worldZ, the effective position is baseZ + worldZ
+  const actualZ = baseZ + worldZ;
     
-    // NO SCATTER - strictly centered
-    const xOffset = 0;
-    const yOffset = 0;
-    
-    // Calculate card's actual Z position relative to camera
-    const cardActualZ = useTransform(worldZ, (wz) => baseZ + wz);
-    
-    // FIXED visibility window - cards stay visible longer
-    // Full opacity from -1000 to 0, quick fade in/out
-    const opacity = useTransform(
-        cardActualZ, 
-        [-1200, -600, -100, 50, 150], 
-        [0, 1, 1, 0.5, 0]
-    );
-    
-    // Scale based on distance
-    const scale = useTransform(cardActualZ, [-1000, -300, 0], [0.5, 0.85, 1.1]);
+  const opacity = calculateOpacity(actualZ);
+  const scale = calculateScale(actualZ);
+  const shouldDisplay = actualZ <= FADE_OUT_END && actualZ >= FADE_IN_START - 500;
+
+  // Cards are positioned at their BASE Z (parent handles worldZ movement)
+  const cardZ = baseZ;
     
     // Color scheme
-    const colors: Record<string, { accent: string; glow: string; border: string; text: string; bg: string }> = {
-// ... existing colors ...
+  const colors: Record<string, { accent: string; glow: string; border: string; text: string; bg: string }> = {
         gold: {
             accent: 'from-gold-400 to-gold-600',
             glow: 'shadow-gold-500/60',
@@ -103,21 +118,22 @@ function TimelineCard({ event, index, worldZ }: TimelineCardProps) {
     
     const cardColor = colors[event.color] || colors.gold;
 
+  if (!shouldDisplay) return null;
+
     return (
-        <motion.div
+      <div
             className="absolute left-1/2 top-1/2 w-96 pointer-events-auto"
             style={{
-                x: '-50%',
-                y: '-50%',
-                z: cardActualZ, // ANIMATED Z position - this was the bug!
+              // USE cardZ (baseZ) for position - parent container handles worldZ movement
+              transform: `translate(-50%, -50%) translateZ(${cardZ}px) scale(${scale})`,
                 opacity,
-                scale,
-                zIndex: 1000 - index, // Force correct stacking order
+              zIndex: 1000 - index,
+              willChange: 'transform, opacity',
             }}
         >
             <div className={`
                 relative p-8 rounded-2xl
-                ${cardColor.bg} backdrop-blur-xl
+                ${cardColor.bg}
                 border-2 ${cardColor.border}
                 shadow-2xl ${cardColor.glow}
                 transform-gpu
@@ -144,26 +160,18 @@ function TimelineCard({ event, index, worldZ }: TimelineCardProps) {
                     {event.description}
                 </p>
             </div>
-        </motion.div>
+      </div>
     );
 }
 
-// CLEANER Grid pattern - White/Grey lines on black
-const gridPattern = `
-    linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px)
-`;
-
+// Main TunnelTimeline component
 export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const tunnelSize = 1000;
-    const tunnelHalf = tunnelSize / 2;
+  const [worldZ, setWorldZ] = useState(0);
     
-    // Convert database highlights to timeline events
-    const timelineEvents = useMemo<TimelineEvent[]>(() => {
-        if (!highlights || highlights.length === 0) {
-            return fallbackEvents;
-        }
+  // Transform database highlights to internal format
+  const timelineEvents: TimelineEvent[] = useMemo(() => {
+    if (!highlights || highlights.length === 0) return fallbackEvents;
         
         return highlights.map((h) => ({
             year: String(h.year),
@@ -185,33 +193,54 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
         }).map(e => e.year);
     }, [timelineEvents]);
     
-    // Track scroll progress
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ['start start', 'end end'],
+  // Calculate dimensions
+  const totalDepth = (timelineEvents.length * CARD_SPACING) + RUNWAY_BUFFER;
+  const vhPerCard = 150;
+  const scrollHeight = `${100 + (timelineEvents.length * vhPerCard)}vh`;
+
+  // GSAP ScrollTrigger setup
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Create ScrollTrigger
+    const trigger = ScrollTrigger.create({
+      trigger: container,
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 1, // Smooth 1-second delay
+      onUpdate: (self) => {
+        // Map scroll progress (0-1) to world Z position
+        const newWorldZ = self.progress * totalDepth;
+        setWorldZ(newWorldZ);
+      },
     });
+
+    // Cleanup
+    return () => {
+      trigger.kill();
+    };
+  }, [totalDepth]);
     
-    // DYNAMIC SCROLLING: Based on number of cards
-    // Each card gets 150vh of scroll distance for comfortable viewing
-    const vhPerCard = 150;
-    const scrollHeight = `${100 + (timelineEvents.length * vhPerCard)}vh`;
+  // Calculate current year based on worldZ
+  const currentYearIndex = useMemo(() => {
+    const cardIndex = Math.floor((worldZ - 500) / CARD_SPACING);
+    return Math.max(0, Math.min(cardIndex, timelineEvents.length - 1));
+  }, [worldZ, timelineEvents.length]);
     
-    // Card spacing in Z-space
-    const cardSpacing = 1000;
+  // Grid pattern for tunnel walls
+  const gridPattern = `
+        linear-gradient(rgba(218,165,32,0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(218,165,32,0.15) 1px, transparent 1px)
+    `;
     
-    // Total depth: each card needs to travel through the visibility window
-    // Card at index N is at baseZ = -600 - (N * 1000)
-    // For it to reach Z = 0 (visible), worldZ must equal |baseZ|
-    const totalDepth = 600 + (timelineEvents.length * cardSpacing) + 200;
-    
-    // Map scroll to world Z position
-    const worldZ = useTransform(scrollYProgress, [0, 1], [0, totalDepth]);
+  const tunnelHalf = 500;
 
     return (
         <div 
             ref={containerRef}
             className="relative bg-black"
-            style={{ height: scrollHeight }}
+        style={{ height: scrollHeight, position: 'relative' }}
         >
             {/* Sticky container */}
             <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
@@ -236,18 +265,17 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                                             className="h-8 w-8 object-contain"
                                         />
                                     </div>
-                                    <span className="text-lg font-semibold text-white group-hover:text-gold-400 transition-colors">
+                    <span className="text-lg font-bold text-white/90 group-hover:text-gold-400 transition-colors">
                                         CICT Tech Portal
                                     </span>
                                 </Link>
-                            </div>
-                            
+                </div>
                             <Link 
                                 href="/"
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-500 text-maroon-900 font-semibold hover:bg-gold-400 transition-all"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 text-maroon-900 font-semibold hover:bg-gold-400 transition-all shadow-lg shadow-gold-500/25"
                             >
                                 <HomeIcon className="w-4 h-4" />
-                                <span className="text-sm">Home</span>
+                  <span>Home</span>
                             </Link>
                         </div>
                     </div>
@@ -255,9 +283,9 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                 
                 {/* Vignette overlay */}
                 <div 
-                    className="absolute inset-0 z-50 pointer-events-none"
+            className="absolute inset-0 pointer-events-none z-[50]"
                     style={{
-                        background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.9) 100%)',
+                      background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%)',
                     }}
                 />
                 
@@ -265,26 +293,24 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                 <div 
                     className="relative w-full h-full flex items-center justify-center"
                     style={{
-                        perspective: '800px',
+                      perspective: '1000px',
                         perspectiveOrigin: '50% 50%',
                     }}
                 >
-                    {/* 3D World */}
-                    <motion.div
+            {/* 3D World - Moves forward with scroll */}
+            <div
                         className="relative w-full h-full"
                         style={{
                             transformStyle: 'preserve-3d',
-                            z: worldZ,
+                          transform: `translateZ(${worldZ}px)`, // Camera moves forward
                         }}
-                    >
-                        {/* === TUNNEL WALLS (Strict Cube) === */}
-                        
+            >
                         {/* Floor */}
                         <div
                             className="absolute left-1/2 top-1/2"
                             style={{
                                 width: '4000px',
-                                height: '10000px',
+                              height: '15000px',
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateY(${tunnelHalf}px) rotateX(90deg)`,
                                 backgroundSize: '100px 100px',
@@ -298,7 +324,7 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                             className="absolute left-1/2 top-1/2"
                             style={{
                                 width: '4000px',
-                                height: '10000px',
+                              height: '15000px',
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateY(-${tunnelHalf}px) rotateX(90deg) rotateY(180deg)`,
                                 backgroundSize: '100px 100px',
@@ -311,7 +337,7 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                         <div
                             className="absolute left-1/2 top-1/2"
                             style={{
-                                width: '10000px',
+                              width: '15000px',
                                 height: '1000px',
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateX(-${tunnelHalf}px) rotateY(90deg)`,
@@ -325,7 +351,7 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                         <div
                             className="absolute left-1/2 top-1/2"
                             style={{
-                                width: '10000px',
+                              width: '15000px',
                                 height: '1000px',
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateX(${tunnelHalf}px) rotateY(-90deg)`,
@@ -355,7 +381,7 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                                 filter: 'blur(80px)',
                             }}
                         />
-                    </motion.div>
+            </div>
                 </div>
                 
                 {/* UI Overlay - Title */}
@@ -368,64 +394,57 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                     </p>
                 </div>
                 
-                {/* === YEAR INDICATORS ON LEFT SIDE === */}
-                <div className="absolute left-8 top-1/2 -translate-y-1/2 z-[60] space-y-4">
-                    {years.map((year, index) => {
-                        const threshold = index / years.length;
-                        return (
-                            <motion.div
-                                key={year}
-                                className="flex items-center gap-3"
-                                style={{
-                                    opacity: useTransform(
-                                        scrollYProgress, 
-                                        [Math.max(0, threshold - 0.15), threshold, Math.min(1, threshold + 0.15)], 
-                                        [0.3, 1, 0.3]
-                                    ),
-                                }}
-                            >
-                                <motion.div 
-                                    className="w-3 h-3 rounded-full bg-gold-400"
-                                    style={{
-                                        scale: useTransform(
-                                            scrollYProgress,
-                                            [Math.max(0, threshold - 0.1), threshold, Math.min(1, threshold + 0.1)],
-                                            [0.6, 1.3, 0.6]
-                                        ),
-                                    }}
-                                />
-                                <span className="text-sm font-mono font-bold text-white">{year}</span>
-                            </motion.div>
-                        );
-                    })}
-                </div>
-                
-                {/* Progress Bar - Right */}
-                <div className="absolute right-8 top-1/2 -translate-y-1/2 w-1 h-64 bg-white/10 rounded-full overflow-hidden z-[60]">
-                     <motion.div 
-                        className="w-full bg-gold-400"
-                        style={{
-                            height: useTransform(scrollYProgress, [0, 1], ['0%', '100%']),
-                        }}
-                    />
-                </div>
-                
-                {/* Footer CTA */}
-                <motion.div 
-                    className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[60]"
-                    style={{
-                        opacity: useTransform(scrollYProgress, [0.9, 1], [0, 1]),
-                        pointerEvents: useTransform(scrollYProgress, (val) => val > 0.9 ? 'auto' : 'none') as any,
-                    }}
-                >
+          {/* Year Indicator Left side */}
+          <div className="absolute left-8 top-1/2 -translate-y-1/2 z-[60] flex flex-col gap-3">
+            {years.map((year, index) => (
+              <div
+                key={year}
+                className={`flex items-center gap-3 transition-all duration-300 ${index === currentYearIndex ? 'opacity-100' : 'opacity-40'
+                  }`}
+              >
+                <div className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentYearIndex
+                  ? 'bg-gold-400 shadow-lg shadow-gold-400/50 scale-125'
+                  : 'bg-white/30'
+                  }`} />
+                <span className={`text-sm font-bold transition-all duration-300 ${index === currentYearIndex ? 'text-gold-400' : 'text-white/50'
+                  }`}>
+                  {year}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Scroll Progress Bar Right side */}
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 z-[60]">
+            <div className="w-1 h-40 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="w-full bg-gradient-to-b from-gold-400 to-maroon-500 rounded-full transition-all duration-100"
+                style={{ height: `${(worldZ / totalDepth) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* End of Timeline CTA with CICT Logo */}
+        <div className="absolute bottom-0 left-0 right-0 h-screen flex items-center justify-center z-[70]">
+          <div className="text-center">
+            {/* CICT Logo */}
+            <div className="mb-6 flex justify-center">
+              <img
+                src="/assets/logo/CICT_Logo.svg"
+                alt="CICT Logo"
+                className="w-24 h-24 object-contain opacity-80 drop-shadow-lg"
+              />
+            </div>
+            <p className="text-white/60 text-lg mb-4">End of Timeline</p>
                     <Link 
                         href="/"
-                        className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gold-500 text-maroon-900 font-bold hover:bg-gold-400 transition-all shadow-xl shadow-gold-500/30 text-lg"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gold-500 text-maroon-900 font-bold text-lg hover:bg-gold-400 transition-all shadow-xl shadow-gold-500/30"
                     >
-                        <HomeIcon className="w-6 h-6" />
-                        Return to Home
+              <HomeIcon className="w-5 h-5" />
+              Return Home
                     </Link>
-                </motion.div>
+          </div>
             </div>
         </div>
     );

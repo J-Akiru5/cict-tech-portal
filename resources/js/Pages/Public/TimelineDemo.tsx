@@ -27,7 +27,10 @@ export default function TimelineDemo({ highlights }: TimelineDemoProps) {
     return (
         <>
             <Head title="CICT Timeline - IT Through the Years" />
-            <TunnelTimeline highlights={highlights} />
+            {/* FIX: Wrapper with explicit position for Framer Motion scroll context */}
+            <div style={{ position: 'relative', minHeight: '100vh' }}>
+                <TunnelTimeline highlights={highlights} />
+            </div>
         </>
     );
 }
