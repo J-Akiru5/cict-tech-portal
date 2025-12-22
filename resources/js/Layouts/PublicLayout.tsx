@@ -1,6 +1,7 @@
 import { PropsWithChildren, useLayoutEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { gsap, ScrollTrigger } from '@/Hooks/useGSAP';
+import PrefetchLink from '@/Components/PrefetchLink';
 
 /**
  * PublicLayout - GSAP-powered layout for public-facing pages
@@ -45,7 +46,7 @@ export default function PublicLayout({ children }: PropsWithChildren) {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-maroon-950 via-maroon-900 to-black">
+        <div className="bg-page-core">
             {/* Fixed Navigation */}
             <nav className="main-navbar fixed top-0 left-0 right-0 z-50 px-6 py-4">
                 <div className="mx-auto max-w-7xl">
@@ -65,18 +66,41 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                         </Link>
 
                         {/* Navigation Links */}
-                        <div className="hidden items-center gap-8 md:flex">
-                            <Link href="/announcements" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+                        <div className="hidden items-center gap-6 md:flex">
+                            <PrefetchLink href="/announcements" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
                                 Announcements
-                            </Link>
-                            <Link href="/org-chart" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
-                                Organization
-                            </Link>
-                            <Link href="/schedule" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
-                                Schedule
-                            </Link>
+                            </PrefetchLink>
+                            <PrefetchLink href="/calendar" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+                                Calendar
+                            </PrefetchLink>
 
-                            {/* IT Through the Years Dropdown */}
+                            {/* Organization Dropdown */}
+                            <div className="relative group">
+                                <button className="text-sm font-medium text-white/70 transition-colors hover:text-white flex items-center gap-1">
+                                    Organization
+                                    <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[180px] shadow-xl">
+                                        <PrefetchLink
+                                            href="/org-chart"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                        >
+                                            👥 Org Chart
+                                        </PrefetchLink>
+                                        <PrefetchLink
+                                            href="/schedule"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                        >
+                                            📅 Officer Schedule
+                                        </PrefetchLink>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* History Dropdown */}
                             <div className="relative group">
                                 <button className="text-sm font-medium text-white/70 transition-colors hover:text-white flex items-center gap-1">
                                     History
@@ -85,32 +109,32 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                                     </svg>
                                 </button>
                                 <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[180px] shadow-xl">
-                                        <Link
+                                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[200px] shadow-xl">
+                                        <PrefetchLink
                                             href="/it-through-the-years"
                                             className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
                                         >
                                             🏛️ IT Through the Years
-                                        </Link>
-                                        <Link
+                                        </PrefetchLink>
+                                        <PrefetchLink
                                             href="/achievements"
                                             className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
                                         >
                                             🏆 Achievements
-                                        </Link>
-                                        <Link
+                                        </PrefetchLink>
+                                        <PrefetchLink
                                             href="/timeline"
                                             className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
                                         >
                                             🚀 3D Timeline
-                                        </Link>
+                                        </PrefetchLink>
                                     </div>
                                 </div>
                             </div>
 
-                            <Link href="/cbl" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+                            <PrefetchLink href="/cbl" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
                                 CBL
-                            </Link>
+                            </PrefetchLink>
                         </div>
 
                         {/* Auth Buttons */}
@@ -181,9 +205,9 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                             </a>
                         </div>
 
-                        {/* Column 2: Quick Links */}
+                        {/* Column 2: Navigation Links */}
                         <div>
-                            <h3 className="text-sm font-bold text-gold-400 uppercase tracking-wider mb-6">Quick Links</h3>
+                            <h3 className="text-sm font-bold text-gold-400 uppercase tracking-wider mb-6">Navigation</h3>
                             <ul className="space-y-3">
                                 <li>
                                     <Link href="/announcements" className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2">
@@ -191,6 +215,14 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                                         </svg>
                                         Announcements
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/calendar" className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-gold-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Calendar
                                     </Link>
                                 </li>
                                 <li>
@@ -204,7 +236,7 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                                 <li>
                                     <Link href="/schedule" className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2">
                                         <svg className="w-4 h-4 text-gold-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         Officer Schedule
                                     </Link>
@@ -217,25 +249,41 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                                         Constitution & By-Laws
                                     </Link>
                                 </li>
-                                <li>
-                                    <a
-                                        href="https://cict-dingle.onrender.com/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2"
-                                    >
-                                        <svg className="w-4 h-4 text-gold-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                        </svg>
-                                        CICT Shop
-                                    </a>
-                                </li>
                             </ul>
                         </div>
 
-                        {/* Column 3: Resources */}
+                        {/* Column 3: History & Account */}
                         <div>
-                            <h3 className="text-sm font-bold text-gold-400 uppercase tracking-wider mb-6">Resources</h3>
+                            <h3 className="text-sm font-bold text-gold-400 uppercase tracking-wider mb-6">History & More</h3>
+                            <ul className="space-y-3">
+                                <li>
+                                    <Link href="/it-through-the-years" className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-gold-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        </svg>
+                                        IT Through the Years
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/achievements" className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-gold-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                        </svg>
+                                        Achievements
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/timeline" className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-gold-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        3D Timeline
+                                    </Link>
+                                </li>
+                            </ul>
+
+                            {/* Account Links */}
+                            <h3 className="text-sm font-bold text-gold-400 uppercase tracking-wider mt-8 mb-4">Account</h3>
                             <ul className="space-y-3">
                                 <li>
                                     <Link href={route('login')} className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2">
@@ -253,52 +301,7 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                                         Register Account
                                     </Link>
                                 </li>
-                                <li>
-                                    <a
-                                        href="https://isufst.edu.ph/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-white/60 hover:text-white transition-colors flex items-center gap-2"
-                                    >
-                                        <svg className="w-4 h-4 text-gold-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                        </svg>
-                                        ISUFST Main Website
-                                    </a>
-                                </li>
                             </ul>
-
-                            {/* Social Links */}
-                            <h3 className="text-sm font-bold text-gold-400 uppercase tracking-wider mt-8 mb-4">Follow Us</h3>
-                            <div className="flex gap-3">
-                                <a
-                                    href="#"
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-gold-500/20 hover:border-gold-400/30 hover:text-gold-400 transition-all"
-                                    aria-label="Facebook"
-                                >
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href="#"
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-gold-500/20 hover:border-gold-400/30 hover:text-gold-400 transition-all"
-                                    aria-label="Instagram"
-                                >
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href="mailto:cict.council@isufst.edu.ph"
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-gold-500/20 hover:border-gold-400/30 hover:text-gold-400 transition-all"
-                                    aria-label="Email"
-                                >
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                    </svg>
-                                </a>
-                            </div>
                         </div>
 
                         {/* Column 4: Feedback Form */}

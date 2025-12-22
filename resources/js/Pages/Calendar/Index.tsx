@@ -1,5 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
+import PublicLayout from '@/Layouts/PublicLayout';
+import GlassPageHeader from '@/Components/GlassPageHeader';
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -119,41 +121,30 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
     };
 
     return (
-        <>
+        <PublicLayout>
             <Head title={`Calendar - ${monthName}`} />
             
-            <div className="min-h-screen bg-gradient-to-br from-maroon-950 via-maroon-900 to-black">
-                {/* Header */}
-                <header className="sticky top-0 z-50 bg-maroon-900/80 backdrop-blur-lg border-b border-white/10">
-                    <div className="w-full px-6 py-4 flex items-center justify-between">
-                        <Link href={route('home')} className="flex items-center gap-2 text-white/60 hover:text-white">
-                            <ChevronLeftIcon className="h-5 w-5" />
-                            <span>Back</span>
+            <div className="pt-28">
+                <GlassPageHeader title="University Calendar">
+                    <div className="flex items-center gap-2">
+                        <Link
+                            href={route('calendar.timeline')}
+                            className="p-2 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-colors"
+                            title="Tunnel Timeline"
+                        >
+                            <ViewColumnsIcon className="h-5 w-5" />
                         </Link>
-                        <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                            <CalendarDaysIcon className="h-6 w-6 text-gold-400" />
-                            University Calendar
-                        </h1>
-                        <div className="flex items-center gap-2">
-                            <Link
-                                href={route('calendar.timeline')}
-                                className="p-2 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-colors"
-                                title="Tunnel Timeline"
-                            >
-                                <ViewColumnsIcon className="h-5 w-5" />
-                            </Link>
-                            <Link
-                                href={route('calendar.parallax')}
-                                className="p-2 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-colors"
-                                title="Parallax Timeline"
-                            >
-                                <Squares2X2Icon className="h-5 w-5" />
-                            </Link>
-                        </div>
+                        <Link
+                            href={route('calendar.parallax')}
+                            className="p-2 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-colors"
+                            title="Parallax Timeline"
+                        >
+                            <Squares2X2Icon className="h-5 w-5" />
+                        </Link>
                     </div>
-                </header>
+                </GlassPageHeader>
 
-                <div className="w-full px-6 py-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
                     <div className="flex gap-8">
                         {/* Sidebar - Featured Events */}
                         <div className="w-72 flex-shrink-0">
@@ -284,11 +275,11 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
 
                 {/* Event Detail Modal */}
                 {selectedEvent && (
-                    <div 
+                    <div
                         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
                         onClick={() => setSelectedEvent(null)}
                     >
-                        <div 
+                        <div
                             className="bg-maroon-900 border border-white/10 rounded-xl p-6 w-full max-w-md"
                             onClick={e => e.stopPropagation()}
                         >
@@ -297,7 +288,7 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">{selectedEvent.title}</h3>
                             <p className="text-white/60 text-sm mb-4">{selectedEvent.description}</p>
-                            
+
                             <div className="space-y-2 mb-6">
                                 <div className="flex items-center gap-2 text-sm text-white/70">
                                     <CalendarDaysIcon className="h-4 w-4 text-gold-400" />
@@ -333,6 +324,6 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                     </div>
                 )}
             </div>
-        </>
+        </PublicLayout>
     );
 }

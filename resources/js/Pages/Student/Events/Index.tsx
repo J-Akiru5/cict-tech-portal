@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import GlassPageHeader from '@/Components/GlassPageHeader';
 
 interface EventItem {
     id: number;
@@ -31,24 +32,18 @@ export default function EventsIndex({ events, types, selectedType }: Props) {
         <AuthenticatedLayout>
             <Head title="Events" />
 
-            <div className="py-8 px-4 sm:px-6">
-                <div className="mx-auto max-w-5xl">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Upcoming Events</h1>
-                            <p className="text-white/60">Join workshops, seminars, and activities</p>
-                        </div>
-                        <Link
-                            href={route('student.events.my')}
-                            className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                        >
-                            My Events
-                        </Link>
-                    </div>
+            <GlassPageHeader title="Upcoming Events">
+                <Link
+                    href={route('student.events.my')}
+                    className="inline-flex items-center px-4 py-2 bg-gold-500 text-maroon-900 font-semibold rounded-lg hover:bg-gold-400 transition-colors shadow-lg shadow-gold-500/20 text-sm"
+                >
+                    My Events
+                </Link>
+            </GlassPageHeader>
 
-                    {/* Type Filter */}
-                    <div className="mb-6 flex flex-wrap gap-2">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-12">
+                {/* Type Filter */}
+                <div className="mb-6 flex flex-wrap gap-2">
                         <Link
                             href={route('student.events.index')}
                             className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
@@ -129,8 +124,7 @@ export default function EventsIndex({ events, types, selectedType }: Props) {
                                 </Link>
                             ))}
                         </div>
-                    )}
-                </div>
+                )}
             </div>
         </AuthenticatedLayout>
     );

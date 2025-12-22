@@ -74,13 +74,25 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         
+        // Get vital metrics
+        $enrollment = $user->currentEnrollment();
+        
         return Inertia::render('Student/Dashboard', [
             'user' => [
                 'name' => $user->name,
                 'student_id' => $user->student_id,
                 'course' => $user->course,
                 'year_level' => $user->year_level,
+                'section' => $user->section,
                 'photo_url' => $user->photo_url,
+                'callcard_background' => $user->callcard_background ?? 'default',
+            ],
+            'vitalMetrics' => [
+                'enrollment_status' => $enrollment?->status ?? 'not_enrolled',
+                'absences' => $user->required_event_absences,
+                'total_required_events' => $user->total_required_events,
+                'outstanding_balance' => $user->outstanding_balance,
+                'fee_paid' => $enrollment?->fee_paid ?? false,
             ],
             'announcements' => $this->getLatestAnnouncements(),
             'dutyOfficer' => $this->getTodayDutyOfficer(),

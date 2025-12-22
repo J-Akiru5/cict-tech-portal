@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import GlassPageHeader from '@/Components/GlassPageHeader';
 
 interface Props {
     user: {
@@ -18,55 +19,48 @@ export default function OfficerDashboard({ user, stats }: Props) {
         <AuthenticatedLayout>
             <Head title="Officer Dashboard" />
             
-            <div className="min-h-screen bg-gradient-to-b from-maroon-950 via-maroon-900 to-black py-8 px-4 sm:px-6">
-                <div className="mx-auto max-w-7xl">
-                    {/* Header */}
-                    <div className="mb-8">
-                        <div className="flex items-center gap-4 mb-2">
-                            <img 
-                                src={user.photo_url}
-                                alt={user.name}
-                                className="h-14 w-14 rounded-full border-2 border-gold-500"
-                            />
-                            <div>
-                                <h1 className="text-2xl font-bold text-white">
-                                    Officer Dashboard
-                                </h1>
-                                <p className="text-white/60">
-                                    Welcome, {user.name} 
-                                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-gold-500/20 px-2 py-0.5 text-xs text-gold-400">
-                                        {user.roles.join(', ')}
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
+            <GlassPageHeader title="Officer Dashboard">
+                <div className="flex items-center gap-3">
+                    <img
+                        src={user.photo_url}
+                        alt={user.name}
+                        className="h-10 w-10 rounded-full border-2 border-gold-500"
+                    />
+                    <div className="text-right">
+                        <p className="text-sm text-white/80">{user.name}</p>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gold-500/20 px-2 py-0.5 text-xs text-gold-400">
+                            {user.roles.join(', ')}
+                        </span>
                     </div>
+                </div>
+            </GlassPageHeader>
 
-                    {/* Stats Cards */}
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                            <div className="text-3xl mb-2">📝</div>
-                            <p className="text-2xl font-bold text-white">{stats.pending_announcements}</p>
-                            <p className="text-sm text-white/50">Pending Announcements</p>
-                        </div>
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                            <div className="text-3xl mb-2">📅</div>
-                            <p className="text-2xl font-bold text-white">{stats.upcoming_duties}</p>
-                            <p className="text-sm text-white/50">Upcoming Duties</p>
-                        </div>
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                            <div className="text-3xl mb-2">💬</div>
-                            <p className="text-2xl font-bold text-white">0</p>
-                            <p className="text-sm text-white/50">New Feedback</p>
-                        </div>
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                            <div className="text-3xl mb-2">📊</div>
-                            <p className="text-2xl font-bold text-white">--</p>
-                            <p className="text-sm text-white/50">Reports Due</p>
-                        </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+                {/* Stats Cards */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                        <div className="text-3xl mb-2">📝</div>
+                        <p className="text-2xl font-bold text-white">{stats.pending_announcements}</p>
+                        <p className="text-sm text-white/50">Pending Announcements</p>
                     </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                        <div className="text-3xl mb-2">📅</div>
+                        <p className="text-2xl font-bold text-white">{stats.upcoming_duties}</p>
+                        <p className="text-sm text-white/50">Upcoming Duties</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                        <div className="text-3xl mb-2">💬</div>
+                        <p className="text-2xl font-bold text-white">0</p>
+                        <p className="text-sm text-white/50">New Feedback</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                        <div className="text-3xl mb-2">📊</div>
+                        <p className="text-2xl font-bold text-white">--</p>
+                        <p className="text-sm text-white/50">Reports Due</p>
+                    </div>
+                </div>
 
-                    {/* Officer Modules */}
+                {/* Officer Modules */}
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                         <h2 className="text-lg font-semibold text-white mb-4">Officer Modules</h2>
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -142,8 +136,7 @@ export default function OfficerDashboard({ user, stats }: Props) {
                         >
                             <span className="text-xl">⚙️</span>
                             <span className="text-sm text-white">Profile</span>
-                        </Link>
-                    </div>
+                    </Link>
                 </div>
             </div>
         </AuthenticatedLayout>

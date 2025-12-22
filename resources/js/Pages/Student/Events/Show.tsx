@@ -1,5 +1,7 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 interface Props {
     event: {
@@ -21,23 +23,43 @@ interface Props {
         attendeeCount: number;
     };
     isRegistered: boolean;
+    registrationId: number | null;
     attendance: {
         status: string;
         checkedInAt: string | null;
     } | null;
 }
 
-export default function ShowEvent({ event, isRegistered, attendance }: Props) {
+export default function ShowEvent({ event, isRegistered, registrationId, attendance }: Props) {
+    const { flash } = usePage().props as any;
     const registerForm = useForm({});
     const unregisterForm = useForm({});
 
+    // Show flash messages as toasts
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
+
     const handleRegister = () => {
-        registerForm.post(route('student.events.register', event.id));
+        registerForm.post(route('student.events.register', event.id), {
+            preserveScroll: true,
+            onSuccess: () => toast.success(`Successfully registered for ${event.title}!`),
+            onError: () => toast.error('Failed to register. Please try again.'),
+        });
     };
 
     const handleUnregister = () => {
-        if (confirm('Are you sure you want to cancel your registration?')) {
-            unregisterForm.delete(route('student.events.unregister', event.id));
+        if (confirm('Are you sure you want to cancel your registration?') && registrationId) {
+            unregisterForm.delete(route('student.events.registration.cancel', registrationId), {
+                preserveScroll: true,
+                onSuccess: () => toast.success('Registration cancelled successfully.'),
+                onError: () => toast.error('Failed to cancel registration.'),
+            });
         }
     };
 

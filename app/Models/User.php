@@ -36,6 +36,8 @@ class User extends Authenticatable
         'emergency_phone',
         'photo',
         'bio',
+        'callcard_background',
+        'custom_callcard_image',
         'facebook_url',
         'is_active',
         'last_login_at',
@@ -94,6 +96,66 @@ class User extends Authenticatable
         return $this->belongsToMany(Event::class, 'event_attendances')
             ->withPivot(['status', 'checked_in_at', 'check_in_method', 'notes'])
             ->withTimestamps();
+    }
+
+    /**
+     * Get enrollments relationship
+     */
+    public function enrollments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * Get current enrollment for the active academic year
+     */
+    public function currentEnrollment(): ?Enrollment
+    {
+        return $this->enrollments()
+            ->whereHas('academicYear', fn($q) => $q->where('is_current', true))
+            ->first();
+    }
+
+    /**
+     * Get enrollment status for current term
+     */
+    public function getEnrollmentStatusAttribute(): string
+    {
+        $enrollment = $this->currentEnrollment();
+        return $enrollment?->status ?? 'not_enrolled';
+    }
+
+    /**
+     * Get count of absences on required events
+     */
+    public function getRequiredEventAbsencesAttribute(): int
+    {
+        return $this->events()
+            ->where('events.is_required', true)
+            ->wherePivot('status', 'absent')
+            ->count();
+    }
+
+    /**
+     * Get count of required events for current academic year
+     */
+    public function getTotalRequiredEventsAttribute(): int
+    {
+        return Event::where('is_required', true)
+            ->whereHas('academicYear', fn($q) => $q->where('is_current', true))
+            ->count();
+    }
+
+    /**
+     * Get outstanding balance (unpaid enrollment fee)
+     */
+    public function getOutstandingBalanceAttribute(): float
+    {
+        $enrollment = $this->currentEnrollment();
+        if (!$enrollment || $enrollment->fee_paid) {
+            return 0.0;
+        }
+        return (float) $enrollment->fee_amount;
     }
 
     /**

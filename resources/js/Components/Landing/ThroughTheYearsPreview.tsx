@@ -233,7 +233,7 @@ export default function ThroughTheYearsPreview({ terms = sampleTerms }: ThroughT
                     </div>
                     <h2 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                         IT{' '}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-white">
                             Through the Years
                         </span>
                     </h2>

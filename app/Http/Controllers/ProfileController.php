@@ -105,4 +105,20 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * Update the user's callcard background preference.
+     */
+    public function updateCallcardBackground(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'callcard_background' => ['required', 'string', 'in:default,gold_marble,tech_circuit,dark_honeycomb,galaxy'],
+        ]);
+
+        $request->user()->update([
+            'callcard_background' => $validated['callcard_background'],
+        ]);
+
+        return back();
+    }
 }

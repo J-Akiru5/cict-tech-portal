@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import PublicLayout from '@/Layouts/PublicLayout';
 import { useState, FormEvent } from 'react';
-import HoneycombBackground from '@/Components/Landing/HoneycombBackground';
+import GlassPageHeader from '@/Components/GlassPageHeader';
 import { 
     ChatBubbleLeftIcon, 
     HeartIcon, 
@@ -38,7 +38,7 @@ interface Post {
     };
 }
 
-interface PageProps {
+interface AchievementPageProps {
     posts: {
         data: Post[];
         links: any;
@@ -60,8 +60,7 @@ const REACTIONS = {
     applaud: { emoji: '👏', label: 'Applaud' },
 };
 
-export default function AchievementFeed({ posts, categories, academicYears, canPost, filters }: PageProps) {
-    const { auth } = usePage<PageProps>().props;
+export default function AchievementFeed({ posts, categories, academicYears, canPost, filters, auth }: AchievementPageProps) {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [expandedComments, setExpandedComments] = useState<number[]>([]);
@@ -101,40 +100,28 @@ export default function AchievementFeed({ posts, categories, academicYears, canP
         <PublicLayout>
             <Head title="CICT Achievements" />
             
-            <div className="relative min-h-screen pt-24 pb-20 overflow-hidden">
-                {/* Background */}
-                <HoneycombBackground />
-                <div className="absolute inset-0 bg-gradient-to-b from-maroon-900/90 via-black/80 to-black z-0 pointer-events-none" />
-
-                {/* Content */}
-                <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6">
-                    
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold-400 via-white to-gold-400">
-                                CICT Achievements
-                            </h1>
-                            <p className="text-white/60 mt-1">Celebrating our accomplishments</p>
-                        </div>
-                        <div className="flex gap-3">
+            <div className="pt-28">
+                <GlassPageHeader title="CICT Achievements">
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all"
+                        >
+                            <FunnelIcon className="w-5 h-5" />
+                        </button>
+                        {canPost && (
                             <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all"
+                                onClick={() => setShowCreateModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gold-500 text-maroon-900 font-bold hover:bg-gold-400 transition-all shadow-lg shadow-gold-500/20"
                             >
-                                <FunnelIcon className="w-5 h-5" />
+                                <PlusIcon className="w-5 h-5" />
+                                Post
                             </button>
-                            {canPost && (
-                                <button
-                                    onClick={() => setShowCreateModal(true)}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gold-500 text-maroon-900 font-bold hover:bg-gold-400 transition-all"
-                                >
-                                    <PlusIcon className="w-5 h-5" />
-                                    Post
-                                </button>
-                            )}
-                        </div>
+                        )}
                     </div>
+                </GlassPageHeader>
+
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-20">
 
                     {/* Filters */}
                     {showFilters && (
@@ -269,7 +256,6 @@ export default function AchievementFeed({ posts, categories, academicYears, canP
                     )}
                 </div>
             </div>
-
             {/* Create Post Modal */}
             {showCreateModal && canPost && (
                 <CreatePostModal onClose={() => setShowCreateModal(false)} categories={categories} />

@@ -14,31 +14,37 @@ const features = [
         icon: MegaphoneIcon,
         title: 'Announcements',
         description: 'Stay updated with the latest news, events, and important notices from the CICT Student Council.',
+        href: '/announcements',
     },
     {
         icon: CalendarDaysIcon,
         title: 'Events & Programs',
         description: 'Track upcoming events, seminars, and activities. Never miss an opportunity to participate.',
+        href: '/calendar',
     },
     {
         icon: UserGroupIcon,
         title: 'Organization',
         description: 'Meet your student council officers and learn about their roles and responsibilities.',
+        href: '/org-chart',
     },
     {
         icon: ChatBubbleLeftRightIcon,
         title: 'AI Assistant',
         description: 'Get instant answers to your questions with our intelligent chatbot assistant.',
+        href: '/login', // Requires login to access
     },
     {
         icon: DocumentTextIcon,
         title: 'CBL Access',
         description: 'Read and understand the Constitution and By-Laws of the CICT Student Council.',
+        href: '/cbl',
     },
     {
         icon: ClipboardDocumentCheckIcon,
         title: 'Attendance',
         description: 'Track your attendance for events and programs. Stay accountable and engaged.',
+        href: '/login', // Requires login to access
     },
 ];
 
@@ -149,7 +155,7 @@ export default function FeaturesSection() {
                                             
                                             {/* Learn more link */}
                                             <a 
-                                                href="#" 
+                                                href={feature.href} 
                                                 className="inline-flex items-center mt-4 text-sm text-gold-400/70 hover:text-gold-400 transition-colors"
                                             >
                                                 <span>Learn more</span>

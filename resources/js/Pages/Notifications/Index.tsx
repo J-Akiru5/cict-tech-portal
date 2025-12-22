@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import GlassPageHeader from '@/Components/GlassPageHeader';
 import {
     BellIcon,
     CalendarDaysIcon,
@@ -93,30 +94,24 @@ export default function NotificationsIndex({ notifications, unreadCount }: Props
     };
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold leading-tight text-white">
-                        Notifications
-                    </h2>
-                    {unreadCount > 0 && (
-                        <button
-                            onClick={markAllAsRead}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gold-400 hover:text-gold-300 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-                        >
-                            <CheckIcon className="w-4 h-4" />
-                            Mark all as read
-                        </button>
-                    )}
-                </div>
-            }
-        >
+        <AuthenticatedLayout>
             <Head title="Notifications" />
 
-            <div className="py-12 bg-maroon-900 min-h-screen">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    {/* Stats */}
-                    <div className="mb-6 flex items-center gap-4">
+            <GlassPageHeader title="Notifications">
+                {unreadCount > 0 && (
+                    <button
+                        onClick={markAllAsRead}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gold-400 hover:text-gold-300 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                        <CheckIcon className="w-4 h-4" />
+                        Mark all as read
+                    </button>
+                )}
+            </GlassPageHeader>
+
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+                {/* Stats */}
+                <div className="mb-6 flex items-center gap-4">
                         <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10">
                             <BellIcon className="w-5 h-5 text-gold-400" />
                             <span className="text-white/70 text-sm">
@@ -235,8 +230,7 @@ export default function NotificationsIndex({ notifications, unreadCount }: Props
                                 />
                             ))}
                         </div>
-                    )}
-                </div>
+                )}
             </div>
         </AuthenticatedLayout>
     );

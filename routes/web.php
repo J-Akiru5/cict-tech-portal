@@ -183,6 +183,9 @@ use App\Http\Controllers\PaymentController;
 Route::middleware(['auth', 'verified'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'studentDashboard'])->name('dashboard');
     
+    // Callcard background preference
+    Route::patch('/profile/callcard-background', [ProfileController::class, 'updateCallcardBackground'])->name('profile.callcard-background');
+    
     // Feedback
     Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
     Route::get('/feedback/create', [FeedbackController::class, 'create'])->name('feedback.create');

@@ -68,7 +68,11 @@ class EventController extends Controller
     public function show(Event $event): Response
     {
         $user = Auth::user();
-        $isRegistered = $user ? $event->attendees()->where('user_id', $user->id)->exists() : false;
+        $registration = $user ? \App\Models\EventRegistration::where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->where('status', '!=', 'cancelled')
+            ->first() : null;
+        $isRegistered = $registration !== null;
         $attendance = $isRegistered 
             ? $event->attendees()->where('user_id', $user->id)->first()?->pivot 
             : null;
@@ -95,6 +99,7 @@ class EventController extends Controller
                 'galleryImages' => $event->gallery_images,
             ],
             'isRegistered' => $isRegistered,
+            'registrationId' => $registration?->id,
             'attendance' => $attendance ? [
                 'status' => $attendance->status,
                 'checkedInAt' => $attendance->checked_in_at?->format('M d, Y g:i A'),
