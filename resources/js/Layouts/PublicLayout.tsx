@@ -49,7 +49,7 @@ export default function PublicLayout({ children }: PropsWithChildren) {
             {/* Fixed Navigation */}
             <nav className="main-navbar fixed top-0 left-0 right-0 z-50 px-6 py-4">
                 <div className="mx-auto max-w-7xl">
-                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-6 py-3 backdrop-blur-xl transition-all duration-300">
+                    <div className="flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-6 py-3 backdrop-blur-xl transition-all duration-300 rotating-border">
                         {/* Logo */}
                         <Link href="/" className="flex items-center gap-3 group">
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-maroon-800 border border-gold-500/30 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
@@ -75,6 +75,39 @@ export default function PublicLayout({ children }: PropsWithChildren) {
                             <Link href="/schedule" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
                                 Schedule
                             </Link>
+
+                            {/* IT Through the Years Dropdown */}
+                            <div className="relative group">
+                                <button className="text-sm font-medium text-white/70 transition-colors hover:text-white flex items-center gap-1">
+                                    History
+                                    <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[180px] shadow-xl">
+                                        <Link
+                                            href="/it-through-the-years"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                        >
+                                            🏛️ IT Through the Years
+                                        </Link>
+                                        <Link
+                                            href="/achievements"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                        >
+                                            🏆 Achievements
+                                        </Link>
+                                        <Link
+                                            href="/timeline"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                        >
+                                            🚀 3D Timeline
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+
                             <Link href="/cbl" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
                                 CBL
                             </Link>

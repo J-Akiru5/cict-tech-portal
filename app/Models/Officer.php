@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,12 +15,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class Officer extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsModelActivity;
 
     protected $fillable = [
         'name',
         'position',
         'position_short',
+        'position_type',      // NEW: elected or appointed
+        'position_category',  // NEW: executive, director, class_rep, special, appointed
+        'section',            // NEW: for class reps (A, B, C, etc.)
+        'class_year',         // NEW: 1, 2, 3, 4 for class reps
         'hierarchy_level',
         'sort_order',
         'email',
@@ -38,6 +43,7 @@ class Officer extends Model
         'is_active' => 'boolean',
         'hierarchy_level' => 'integer',
         'sort_order' => 'integer',
+        'class_year' => 'integer',
     ];
 
     /**

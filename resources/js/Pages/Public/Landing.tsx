@@ -20,13 +20,15 @@ import ThroughTheYearsPreview from '@/Components/Landing/ThroughTheYearsPreview'
  */
 export default function Landing({
     auth,
-}: PageProps) {
+    upcomingEvents,
+}: PageProps & { upcomingEvents: any[] }) {
     return (
         <PublicLayout>
             <Head title="Welcome to CICT Tech Portal" />
             
             {/* Hero Section */}
-            <HeroSection isLoggedIn={!!auth.user} />
+            {/* Hero Section */}
+            <HeroSection isLoggedIn={!!auth.user} upcomingEvents={upcomingEvents} />
             
             {/* Features Section */}
             <FeaturesSection />

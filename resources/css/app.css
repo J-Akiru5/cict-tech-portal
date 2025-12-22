@@ -511,3 +511,56 @@
 .glass-card-hover:hover .shine-sweep {
     transform: translateX(100%) skewX(-12deg);
 }
+/* ═══════════════════════════════════════════════════════════════════════════
+    ROTATING LIGHT BORDER EFFECT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@property --angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.rotating-border {
+    position: relative;
+    /* Ensure the border is visible */
+    border: 1px solid transparent;
+}
+
+.rotating-border::before,
+.rotating-border::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    /* Slight overlap to cover the border area */
+    z-index: -1;
+    background: conic-gradient(from var(--angle),
+            transparent 0%,
+            transparent 70%,
+            var(--color-gold-400) 90%,
+            transparent 100%);
+    border-radius: inherit;
+    animation: rotate-angle 4s linear infinite;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* Add a second layer for glow/blur */
+.rotating-border::after {
+    filter: blur(10px);
+    opacity: 0.5;
+}
+
+@keyframes rotate-angle {
+    0% {
+        --angle: 0deg;
+    }
+
+    100% {
+        --angle: 360deg;
+    }
+}

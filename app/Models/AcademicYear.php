@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,12 +14,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class AcademicYear extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'year_start',
         'year_end',
         'label',
+        'theme',
         'semester',
         'is_current',
         'start_date',
@@ -66,6 +68,11 @@ class AcademicYear extends Model
     public function officers(): HasMany
     {
         return $this->hasMany(Officer::class);
+    }
+
+    public function councilHighlights(): HasMany
+    {
+        return $this->hasMany(CouncilHighlight::class);
     }
 
     /**

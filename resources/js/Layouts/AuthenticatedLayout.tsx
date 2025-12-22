@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { PropsWithChildren, ReactNode, useState } from 'react';
 import { ChatWidget } from '@/Components/AI/ChatWidget';
+import NotificationBell from '@/Components/Notifications/NotificationBell';
 
 /**
  * AuthenticatedLayout - Glassmorphic layout for authenticated users
@@ -76,8 +77,12 @@ export default function Authenticated({
                             </div>
                         </div>
 
-                        {/* Right side - User Menu */}
-                        <div className="hidden sm:flex sm:items-center">
+                        {/* Right side - Notifications & User Menu */}
+                        <div className="hidden sm:flex sm:items-center sm:gap-2">
+                            {/* Notification Bell */}
+                            <NotificationBell />
+
+                            {/* User Dropdown */}
                             <div className="relative">
                                 <button
                                     onClick={() => setShowUserMenu(!showUserMenu)}

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
  */
 class Event extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsModelActivity;
 
     protected $fillable = [
         'title',
@@ -29,6 +30,8 @@ class Event extends Model
         'location',
         'is_online',
         'meeting_link',
+        'cover_image',
+        'gallery_images',
         'requires_registration',
         'max_attendees',
         'registration_deadline',
@@ -44,6 +47,7 @@ class Event extends Model
         'requires_registration' => 'boolean',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'gallery_images' => 'array',
     ];
 
     /**
@@ -85,6 +89,16 @@ class Event extends Model
         return $this->belongsToMany(User::class, 'event_attendances')
             ->withPivot(['status', 'checked_in_at', 'check_in_method', 'notes'])
             ->withTimestamps();
+    }
+
+    public function registrations()
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
+
+    public function activeRegistrations()
+    {
+        return $this->registrations()->active();
     }
 
     /**

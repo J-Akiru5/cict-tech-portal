@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EventRegistrationConfirmed;
+use App\Notifications\EventRegistrationNotification;
 
 /**
  * EventController
@@ -88,6 +91,8 @@ class EventController extends Controller
                 'maxAttendees' => $event->max_attendees,
                 'availableSlots' => $event->available_slots,
                 'attendeeCount' => $event->attendees()->count(),
+                'coverImage' => $event->cover_image,
+                'galleryImages' => $event->gallery_images,
             ],
             'isRegistered' => $isRegistered,
             'attendance' => $attendance ? [
@@ -116,6 +121,17 @@ class EventController extends Controller
 
         // Register
         $event->attendees()->attach($user->id, ['status' => 'registered']);
+
+        // Send In-App Notification
+        $user->notify(new EventRegistrationNotification($event));
+
+        // Send Confirmation Email
+        try {
+            Mail::to($user)->send(new EventRegistrationConfirmed($event, $user));
+        } catch (\Exception $e) {
+            // Log error but don't fail registration
+            \Illuminate\Support\Facades\Log::error('Failed to send registration email: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'You have successfully registered for this event!');
     }

@@ -1,6 +1,6 @@
-import { useRef, useMemo, useState, useEffect, useLayoutEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useLayoutEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import { ArrowLeftIcon, HomeIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, HomeIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -25,14 +25,19 @@ interface TimelineHighlight {
     icon: string;
     color: string;
     is_featured: boolean;
+  president?: string;
+  president_photo?: string;
 }
 
 // Internal event type for rendering
 interface TimelineEvent {
+  id?: number;
     year: string;
     title: string;
     description: string;
+  type?: string;
     color: 'gold' | 'maroon' | 'white';
+  president?: string;
 }
 
 // Props for the TunnelTimeline component
@@ -143,26 +148,151 @@ function TimelineCard({ event, index, worldZ, total }: TimelineCardProps) {
                 
                 {/* Year badge */}
                 <div className={`
-                    inline-block px-5 py-2 mb-4 rounded-full text-sm font-bold
+                    inline-block px-5 py-2 mb-2 rounded-full text-sm font-bold
                     bg-gradient-to-r ${cardColor.accent} ${cardColor.text}
                     shadow-lg
                 `}>
                     {event.year}
                 </div>
                 
+          {/* President attribution */}
+          {event.president && (
+            <p className="text-gold-400/80 text-xs font-medium mb-3 tracking-wide">
+              👤 President: {event.president}
+            </p>
+          )}
+
                 {/* Title */}
                 <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">
                     {event.title}
                 </h3>
                 
                 {/* Description */}
-                <p className="text-base text-white/80 leading-relaxed">
+          {/* Description */}
+          <p className="text-base text-white/80 leading-relaxed mb-6">
                     {event.description}
                 </p>
+
+          {/* View Details Button */}
+          <Link
+            href={`/it-through-the-years#${event.year}`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-md shadow-lg mt-2"
+          >
+            View Details
+            <ArrowRightIcon className="w-4 h-4" />
+          </Link>
             </div>
       </div>
     );
 }
+
+interface GridRunnersProps {
+  instanceId: string; // Unique identifier for this grid wall
+  count: number;
+  length: number; // The dimension along which they travel (tunnel depth)
+  cross: number;  // The cross dimension (width/height of wall)
+  direction: 'vertical' | 'horizontal';
+}
+
+const GridRunners = React.memo(({ instanceId, count, length, cross, direction }: GridRunnersProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Generate static runners - only regenerate when count/cross changes significantly
+  const runners = useMemo(() => {
+    // Use a seeded approach based on instanceId for consistent positioning
+    const seed = instanceId.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    return Array.from({ length: count }).map((_, i) => {
+      // Pseudo-random but deterministic based on seed + index
+      const pseudoRandom = ((seed + i * 7919) % 1000) / 1000;
+      const colorRandom = ((seed + i * 6971) % 1000) / 1000;
+      return {
+        id: `${instanceId}-${i}`,
+        // Snap to 100px grid
+        crossPos: Math.floor(pseudoRandom * (cross / 100)) * 100,
+        color: colorRandom > 0.66 ? 'gold' : (colorRandom > 0.33 ? 'maroon' : 'white'),
+        speed: (pseudoRandom * 10) + 10, // 10-20s duration
+        delay: pseudoRandom * 10,
+        trailLength: (pseudoRandom * 300) + 200,
+      };
+    });
+  }, [instanceId, count, cross]);
+
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+
+    const ctx = gsap.context(() => {
+      runners.forEach((runner) => {
+        const selector = `[data-runner="${runner.id}"]`;
+        if (direction === 'vertical') {
+          gsap.to(selector, {
+            y: length,
+            duration: runner.speed,
+            ease: "none",
+            repeat: -1,
+            delay: runner.delay,
+            startAt: { y: -500 },
+          });
+        } else {
+          gsap.to(selector, {
+            x: length,
+            duration: runner.speed,
+            ease: "none",
+            repeat: -1,
+            delay: runner.delay,
+            startAt: { x: -500 },
+          });
+        }
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [runners, length, direction]);
+
+  const getColors = (color: string) => {
+    switch (color) {
+      case 'gold': return 'from-yellow-300 via-yellow-500/50 to-transparent shadow-[0_0_15px_rgba(253,224,71,0.6)]';
+      case 'maroon': return 'from-red-500 via-maroon-500/50 to-transparent shadow-[0_0_15px_rgba(239,68,68,0.6)]';
+      case 'white': return 'from-white via-blue-100/50 to-transparent shadow-[0_0_15px_rgba(255,255,255,0.8)]';
+      default: return 'from-gold-400 to-transparent';
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{ contain: 'strict' }}
+    >
+      {runners.map((runner) => (
+        <div
+          key={runner.id}
+          data-runner={runner.id}
+          className={`absolute rounded-full bg-gradient-to-b ${getColors(runner.color)} mix-blend-screen`}
+          style={{
+            opacity: 0.9,
+            willChange: 'transform',
+            ...(direction === 'vertical' ? {
+              width: '4px',
+              height: runner.trailLength,
+              left: runner.crossPos - 1,
+              top: -500,
+            } : {
+              height: '4px',
+              width: runner.trailLength,
+              top: runner.crossPos - 1,
+              left: -500,
+              background: `linear-gradient(to right, ${runner.color === 'gold' ? '#fde047' : runner.color === 'maroon' ? '#ef4444' : '#ffffff'}, transparent)`,
+            })
+          }}
+        >
+          {direction === 'horizontal' && (
+            <div className={`absolute inset-0 bg-gradient-to-r ${getColors(runner.color)}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+});
 
 // Main TunnelTimeline component
 export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
@@ -174,12 +304,15 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
     if (!highlights || highlights.length === 0) return fallbackEvents;
         
         return highlights.map((h) => ({
+          id: h.id,
             year: String(h.year),
             title: h.title,
             description: h.description,
+          type: h.type,
             color: (h.color === 'gold' || h.color === 'maroon' || h.color === 'white' 
                 ? h.color 
                 : (h.is_featured ? 'gold' : 'maroon')) as 'gold' | 'maroon' | 'white',
+          president: h.president,
         }));
     }, [highlights]);
     
@@ -193,10 +326,14 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
         }).map(e => e.year);
     }, [timelineEvents]);
     
-  // Calculate dimensions
-  const totalDepth = (timelineEvents.length * CARD_SPACING) + RUNWAY_BUFFER;
+  // Calculate dimensions based on number of cards
+  const totalDepth = useMemo(() => (timelineEvents.length * CARD_SPACING) + RUNWAY_BUFFER, [timelineEvents.length]);
   const vhPerCard = 150;
   const scrollHeight = `${100 + (timelineEvents.length * vhPerCard)}vh`;
+
+  // Grid length extends beyond the last card to prevent grid ending prematurely
+  // Memoized to prevent unnecessary recalculations
+  const gridLength = useMemo(() => Math.max(15000, totalDepth + 5000), [totalDepth]);
 
   // GSAP ScrollTrigger setup
   useLayoutEffect(() => {
@@ -228,10 +365,12 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
     return Math.max(0, Math.min(cardIndex, timelineEvents.length - 1));
   }, [worldZ, timelineEvents.length]);
     
-  // Grid pattern for tunnel walls
+  // Grid pattern for tunnel walls - STEADY NEON GLOW (Maroon/Red)
   const gridPattern = `
-        linear-gradient(rgba(218,165,32,0.15) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(218,165,32,0.15) 1px, transparent 1px)
+        linear-gradient(rgba(220,20,60,0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(220,20,60,0.4) 1px, transparent 1px),
+        linear-gradient(rgba(180,0,0,0.2) 3px, transparent 3px),
+        linear-gradient(90deg, rgba(180,0,0,0.2) 3px, transparent 3px)
     `;
     
   const tunnelHalf = 500;
@@ -310,34 +449,42 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                             className="absolute left-1/2 top-1/2"
                             style={{
                                 width: '4000px',
-                              height: '15000px',
+                              height: `${gridLength}px`,
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateY(${tunnelHalf}px) rotateX(90deg)`,
                                 backgroundSize: '100px 100px',
                                 backgroundImage: gridPattern,
                                 backfaceVisibility: 'hidden',
                             }}
-                        />
+              >
+                <GridRunners instanceId="floor-v" count={15} length={gridLength} cross={4000} direction="vertical" />
+                {/* Horizontal cross-runners */}
+                <GridRunners instanceId="floor-h" count={8} length={4000} cross={gridLength} direction="horizontal" />
+              </div>
                         
                         {/* Ceiling */}
                         <div
                             className="absolute left-1/2 top-1/2"
                             style={{
                                 width: '4000px',
-                              height: '15000px',
+                              height: `${gridLength}px`,
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateY(-${tunnelHalf}px) rotateX(90deg) rotateY(180deg)`,
                                 backgroundSize: '100px 100px',
                                 backgroundImage: gridPattern,
                                 backfaceVisibility: 'hidden',
                             }}
-                        />
+              >
+                <GridRunners instanceId="ceiling-v" count={15} length={gridLength} cross={4000} direction="vertical" />
+                {/* Horizontal cross-runners */}
+                <GridRunners instanceId="ceiling-h" count={8} length={4000} cross={gridLength} direction="horizontal" />
+              </div>
                         
                         {/* Left Wall */}
                         <div
                             className="absolute left-1/2 top-1/2"
                             style={{
-                              width: '15000px',
+                              width: `${gridLength}px`,
                                 height: '1000px',
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateX(-${tunnelHalf}px) rotateY(90deg)`,
@@ -345,13 +492,15 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                                 backgroundImage: gridPattern,
                                 backfaceVisibility: 'hidden',
                             }}
-                        />
+              >
+                <GridRunners instanceId="left-wall" count={20} length={gridLength} cross={1000} direction="horizontal" />
+              </div>
                         
                         {/* Right Wall */}
                         <div
                             className="absolute left-1/2 top-1/2"
                             style={{
-                              width: '15000px',
+                              width: `${gridLength}px`,
                                 height: '1000px',
                                 transformOrigin: 'center center',
                                 transform: `translate(-50%, -50%) translateX(${tunnelHalf}px) rotateY(-90deg)`,
@@ -359,7 +508,9 @@ export default function TunnelTimeline({ highlights }: TunnelTimelineProps) {
                                 backgroundImage: gridPattern,
                                 backfaceVisibility: 'hidden',
                             }}
-                        />
+              >
+                <GridRunners instanceId="right-wall" count={20} length={gridLength} cross={1000} direction="horizontal" />
+              </div>
                         
                         {/* === TIMELINE CARDS === */}
                         {timelineEvents.map((event, index) => (

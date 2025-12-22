@@ -43,6 +43,10 @@ class DashboardController extends Controller
     {
         return Inertia::render('Admin/Dashboard', [
             'stats' => $this->getAdminStats(),
+            'userGrowth' => $this->getUserGrowthData(),
+            'enrollmentByProgram' => $this->getEnrollmentByProgram(),
+            'paymentStatus' => $this->getPaymentStatus(),
+            'recentActivity' => $this->getRecentActivity(),
         ]);
     }
 
@@ -93,7 +97,74 @@ class DashboardController extends Controller
             'total_officers' => \App\Models\Officer::count(),
             'total_announcements' => \App\Models\Announcement::count(),
             'active_academic_year' => \App\Models\AcademicYear::getCurrentYear()?->label ?? 'Not set',
+            'pending_payments' => \App\Models\PaymentRecord::where('status', 'pending')->count(),
+            'enrolled_students' => \App\Models\Enrollment::where('status', 'enrolled')->count(),
         ];
+    }
+
+    private function getUserGrowthData(): array
+    {
+        $months = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $months[] = [
+                'month' => $date->format('M'),
+                'users' => \App\Models\User::whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->count(),
+            ];
+        }
+        return $months;
+    }
+
+    private function getEnrollmentByProgram(): array
+    {
+        return \App\Models\User::whereNotNull('course')
+            ->select('course')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('course')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => ['program' => $item->course ?? 'Other', 'count' => $item->count])
+            ->toArray();
+    }
+
+    private function getPaymentStatus(): array
+    {
+        $statuses = \App\Models\PaymentRecord::select('status')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('status')
+            ->get()
+            ->map(fn($item) => ['status' => ucfirst($item->status), 'count' => $item->count])
+            ->toArray();
+        
+        return empty($statuses) ? [
+            ['status' => 'No data', 'count' => 1]
+        ] : $statuses;
+    }
+
+    private function getRecentActivity(): array
+    {
+        // Check if activity_log table exists and has data
+        if (class_exists(\Spatie\Activitylog\Models\Activity::class)) {
+            try {
+                return \Spatie\Activitylog\Models\Activity::with('causer:id,name')
+                    ->orderByDesc('created_at')
+                    ->limit(10)
+                    ->get()
+                    ->map(fn($activity) => [
+                        'id' => $activity->id,
+                        'description' => $activity->description,
+                        'causer' => $activity->causer ? ['name' => $activity->causer->name] : null,
+                        'created_at' => $activity->created_at->toISOString(),
+                    ])
+                    ->toArray();
+            } catch (\Exception $e) {
+                return [];
+            }
+        }
+        return [];
     }
 
     private function getOfficerStats($user): array
