@@ -47,7 +47,7 @@ export default function StudentDashboard({ user, vitalMetrics, announcements, du
         <AuthenticatedLayout>
             <Head title="CICT Student Portal" />
             
-            <div className="py-6 px-4 sm:px-6 pt-24">
+            <div className="py-6 px-4 sm:px-6">
                 <div className="mx-auto max-w-7xl">
                     {/* Student ID Card */}
                     <StudentCallcard

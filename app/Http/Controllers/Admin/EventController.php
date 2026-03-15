@@ -60,23 +60,27 @@ class EventController extends Controller
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
             'academic_year_id' => ['nullable', 'exists:academic_years,id'],
-            'cover_image' => ['nullable', 'image', 'max:2048'], // 2MB Max
-            'gallery_images.*' => ['image', 'max:2048'],
+            'cover_image' => ['nullable', 'image', 'max:10240'], // 10MB Max
+            'gallery_images.*' => ['image', 'max:10240'], // 10MB Max per image
         ]);
 
         $validated['slug'] = Str::slug($validated['title']) . '-' . Str::random(5);
 
-        // Handle Cover Image
+        // Handle Cover Image Upload to R2
+        $coverUploaded = false;
         if ($request->hasFile('cover_image')) {
-            $path = $request->file('cover_image')->store('events/covers', 'public');
+            $path = $request->file('cover_image')->store('events/covers', 'r2');
             $validated['cover_image'] = $path;
+            $coverUploaded = true;
         }
 
-        // Handle Gallery Images
+        // Handle Gallery Images Upload to R2
+        $galleryCount = 0;
         if ($request->hasFile('gallery_images')) {
             $galleryPaths = [];
             foreach ($request->file('gallery_images') as $image) {
-                $galleryPaths[] = $image->store('events/gallery', 'public');
+                $galleryPaths[] = $image->store('events/gallery', 'r2');
+                $galleryCount++;
             }
             $validated['gallery_images'] = $galleryPaths; // Eloquent casts array to JSON
         }
@@ -89,7 +93,16 @@ class EventController extends Controller
             ->withProperties(['title' => $event->title])
             ->log('created event');
 
-        return back()->with('success', 'Event created successfully.');
+        $message = 'Event created successfully.';
+        if ($coverUploaded && $galleryCount > 0) {
+            $message .= " Cover image and {$galleryCount} gallery images uploaded to cloud storage.";
+        } elseif ($coverUploaded) {
+            $message .= ' Cover image uploaded to cloud storage.';
+        } elseif ($galleryCount > 0) {
+            $message .= " {$galleryCount} gallery images uploaded to cloud storage.";
+        }
+        
+        return back()->with('success', $message);
     }
 
     /**
@@ -113,32 +126,36 @@ class EventController extends Controller
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
             'academic_year_id' => ['nullable', 'exists:academic_years,id'],
-            'cover_image' => ['nullable', 'image', 'max:2048'],
-            'gallery_images.*' => ['image', 'max:2048'],
+            'cover_image' => ['nullable', 'image', 'max:10240'], // 10MB Max
+            'gallery_images.*' => ['image', 'max:10240'], // 10MB Max per image
         ]);
 
-        // Handle Cover Image
+        // Handle Cover Image Upload to R2
+        $coverUploaded = false;
         if ($request->hasFile('cover_image')) {
-            // Delete old image if exists
+            // Delete old image from R2 if exists
             if ($event->cover_image) {
-                Storage::disk('public')->delete($event->cover_image);
+                Storage::disk('r2')->delete($event->cover_image);
             }
-            $path = $request->file('cover_image')->store('events/covers', 'public');
+            $path = $request->file('cover_image')->store('events/covers', 'r2');
             $validated['cover_image'] = $path;
+            $coverUploaded = true;
         }
 
-        // Handle Gallery Images
+        // Handle Gallery Images Upload to R2
+        $galleryCount = 0;
         if ($request->hasFile('gallery_images')) {
-            // Delete old images (optional: could opt to append, but replacing is cleaner for basic input)
+            // Delete old images from R2
             if ($event->gallery_images) {
                 foreach ($event->gallery_images as $oldImage) {
-                    Storage::disk('public')->delete($oldImage);
+                    Storage::disk('r2')->delete($oldImage);
                 }
             }
 
             $galleryPaths = [];
             foreach ($request->file('gallery_images') as $image) {
-                $galleryPaths[] = $image->store('events/gallery', 'public');
+                $galleryPaths[] = $image->store('events/gallery', 'r2');
+                $galleryCount++;
             }
             $validated['gallery_images'] = $galleryPaths;
         }
@@ -151,7 +168,16 @@ class EventController extends Controller
             ->withProperties(['title' => $event->title])
             ->log('updated event');
 
-        return back()->with('success', 'Event updated successfully.');
+        $message = 'Event updated successfully.';
+        if ($coverUploaded && $galleryCount > 0) {
+            $message .= " New cover image and {$galleryCount} gallery images uploaded to cloud storage.";
+        } elseif ($coverUploaded) {
+            $message .= ' New cover image uploaded to cloud storage.';
+        } elseif ($galleryCount > 0) {
+            $message .= " {$galleryCount} new gallery images uploaded to cloud storage.";
+        }
+        
+        return back()->with('success', $message);
     }
 
     /**

@@ -99,6 +99,10 @@ return [
             ],
         ],
 
+        'upstash' => [
+            'driver' => 'upstash',
+        ],
+
     ],
 
     /*

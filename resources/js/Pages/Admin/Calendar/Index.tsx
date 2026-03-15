@@ -194,20 +194,44 @@ export default function AdminCalendar({ events, eventTypes, academicYears }: Pro
                 ...data,
                 _method: 'put',
             }, {
-                preserveScroll: true, // Only if router.post supports this (it does for visits) but forceFormData handles files
+                preserveScroll: true,
                 forceFormData: true,
-                onSuccess: () => {
+                onSuccess: (page) => {
                     setIsModalOpen(false);
                     resetForm();
+                    const flash = (page.props as any).flash;
+                    if (flash?.success) {
+                        toast.success(flash.success);
+                    }
+                },
+                onError: (errors) => {
+                    const firstError = Object.values(errors).flat()[0] as string;
+                    if (firstError?.includes('kilobytes')) {
+                        toast.error('Image too large. Maximum size is 10MB.');
+                    } else {
+                        toast.error(firstError || 'Failed to update event.');
+                    }
                 },
             });
         } else {
             router.post(route('admin.calendar.store'), data, {
                 preserveScroll: true,
                 forceFormData: true,
-                onSuccess: () => {
+                onSuccess: (page) => {
                     setIsModalOpen(false);
                     resetForm();
+                    const flash = (page.props as any).flash;
+                    if (flash?.success) {
+                        toast.success(flash.success);
+                    }
+                },
+                onError: (errors) => {
+                    const firstError = Object.values(errors).flat()[0] as string;
+                    if (firstError?.includes('kilobytes')) {
+                        toast.error('Image too large. Maximum size is 10MB.');
+                    } else {
+                        toast.error(firstError || 'Failed to create event.');
+                    }
                 },
             });
         }
@@ -219,9 +243,16 @@ export default function AdminCalendar({ events, eventTypes, academicYears }: Pro
         if (confirm('Are you sure you want to delete this event?')) {
             router.delete(route('admin.calendar.destroy', selectedEvent.id), {
                 preserveScroll: true,
-                onSuccess: () => {
+                onSuccess: (page) => {
                     setIsModalOpen(false);
                     resetForm();
+                    const flash = (page.props as any).flash;
+                    if (flash?.success) {
+                        toast.success(flash.success);
+                    }
+                },
+                onError: () => {
+                    toast.error('Failed to delete event.');
                 },
             });
         }
@@ -595,7 +626,7 @@ export default function AdminCalendar({ events, eventTypes, academicYears }: Pro
 
                                             <div className="flex gap-3 pt-4 border-t border-white/10">
                                                 <button
-                                                    onClick={() => setIsViewMode(false)}
+                                                    onClick={() => selectedEvent && openEditModal(selectedEvent)}
                                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
                                                 >
                                                     <PencilSquareIcon className="h-4 w-4" />
@@ -720,7 +751,7 @@ export default function AdminCalendar({ events, eventTypes, academicYears }: Pro
                                                                 <PhotoIcon className="h-5 w-5 text-gold-400/50" />
                                                             </div>
                                                         </div>
-                                                        <p className="mt-1 text-xs text-white/40">Visible on event cards and headers. Max 2MB.</p>
+                                                            <p className="mt-1 text-xs text-white/40">Visible on event cards and headers. Max 10MB.</p>
                                                     </div>
 
                                                     {/* Gallery Images */}
@@ -804,13 +835,23 @@ export default function AdminCalendar({ events, eventTypes, academicYears }: Pro
 
                                             {/* Form Actions */}
                                             <div className="flex gap-3 pt-5 border-t border-white/10">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsModalOpen(false)}
-                                                    className="px-5 py-3 rounded-xl border border-white/20 text-white/70 font-medium hover:bg-white/10 hover:text-white transition-colors"
-                                                >
-                                                    Cancel
-                                                </button>
+                                                    {selectedEvent ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsViewMode(true)}
+                                                            className="px-5 py-3 rounded-xl border border-white/20 text-white/70 font-medium hover:bg-white/10 hover:text-white transition-colors"
+                                                        >
+                                                            ← Back to Details
+                                                        </button>
+                                                    ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsModalOpen(false)}
+                                                                className="px-5 py-3 rounded-xl border border-white/20 text-white/70 font-medium hover:bg-white/10 hover:text-white transition-colors"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                    )}
                                                 <button
                                                     type="submit"
                                                     className="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-maroon-900 font-bold hover:from-gold-400 hover:to-gold-500 transition-all shadow-lg shadow-gold-500/25"

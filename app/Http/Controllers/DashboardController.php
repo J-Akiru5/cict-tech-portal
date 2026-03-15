@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,7 +47,10 @@ class DashboardController extends Controller
             'stats' => $this->getAdminStats(),
             'userGrowth' => $this->getUserGrowthData(),
             'enrollmentByProgram' => $this->getEnrollmentByProgram(),
+            'enrollmentByYearLevel' => $this->getEnrollmentByYearLevel(),
             'paymentStatus' => $this->getPaymentStatus(),
+            'eventStats' => $this->getEventStats(),
+            'dutyStats' => $this->getDutyStats(),
             'recentActivity' => $this->getRecentActivity(),
         ]);
     }
@@ -104,56 +109,183 @@ class DashboardController extends Controller
      */
     private function getAdminStats(): array
     {
-        return [
-            'total_users' => \App\Models\User::count(),
-            'total_officers' => \App\Models\Officer::count(),
-            'total_announcements' => \App\Models\Announcement::count(),
-            'active_academic_year' => \App\Models\AcademicYear::getCurrentYear()?->label ?? 'Not set',
-            'pending_payments' => \App\Models\PaymentRecord::where('status', 'pending')->count(),
-            'enrolled_students' => \App\Models\Enrollment::where('status', 'enrolled')->count(),
-        ];
+        return Cache::remember('dashboard:admin:stats', 300, function () {
+            // Single optimized query instead of 6 separate queries
+            $stats = DB::selectOne("
+                SELECT 
+                    (SELECT COUNT(*) FROM users) as total_users,
+                    (SELECT COUNT(*) FROM officers) as total_officers,
+                    (SELECT COUNT(*) FROM announcements) as total_announcements,
+                    (SELECT COUNT(*) FROM payment_records WHERE status = 'pending') as pending_payments,
+                    (SELECT COUNT(*) FROM enrollments WHERE status = 'enrolled') as enrolled_students
+            ");
+
+            return [
+                'total_users' => $stats->total_users ?? 0,
+                'total_officers' => $stats->total_officers ?? 0,
+                'total_announcements' => $stats->total_announcements ?? 0,
+                'active_academic_year' => \App\Models\AcademicYear::getCurrentYear()?->label ?? 'Not set',
+                'pending_payments' => $stats->pending_payments ?? 0,
+                'enrolled_students' => $stats->enrolled_students ?? 0,
+            ];
+        });
     }
 
     private function getUserGrowthData(): array
     {
-        $months = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $months[] = [
-                'month' => $date->format('M'),
-                'users' => \App\Models\User::whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count(),
-            ];
-        }
-        return $months;
+        return Cache::remember('dashboard:admin:user_growth', 600, function () {
+            // Single query with date aggregation instead of 6 separate queries
+            $results = DB::select("
+                SELECT 
+                    TO_CHAR(created_at, 'Mon') as month,
+                    TO_CHAR(created_at, 'YYYY-MM') as month_key,
+                    COUNT(*) as users
+                FROM users
+                WHERE created_at >= NOW() - INTERVAL '6 months'
+                GROUP BY TO_CHAR(created_at, 'Mon'), TO_CHAR(created_at, 'YYYY-MM')
+                ORDER BY month_key ASC
+            ");
+
+            return array_map(fn($row) => [
+                'month' => $row->month,
+                'users' => (int) $row->users,
+            ], $results);
+        });
     }
 
     private function getEnrollmentByProgram(): array
     {
-        return \App\Models\User::whereNotNull('course')
-            ->select('course')
+        return Cache::remember('dashboard:admin:enrollment_by_program', 600, function () {
+            return \App\Models\User::whereNotNull('course')
+                ->select('course')
+                ->selectRaw('COUNT(*) as count')
+                ->groupBy('course')
+                ->orderByDesc('count')
+                ->limit(5)
+                ->get()
+                ->map(fn($item) => ['program' => $item->course ?? 'Other', 'count' => $item->count])
+                ->toArray();
+        });
+    }
+
+    /**
+     * Enrollment statistics by year level
+     */
+    private function getEnrollmentByYearLevel(): array
+    {
+        return Cache::remember('dashboard:admin:enrollment_by_year', 600, function () {
+            return \App\Models\User::whereNotNull('year_level')
+                ->select('year_level')
+                ->selectRaw('COUNT(*) as count')
+                ->groupBy('year_level')
+                ->orderBy('year_level')
+                ->get()
+                ->map(fn($item) => [
+                    'year_level' => $this->formatYearLevel($item->year_level),
+                    'count' => $item->count
+                ])
+                ->toArray();
+        });
+    }
+
+    /**
+     * Format year level for display
+     */
+    private function formatYearLevel($year): string
+    {
+        $labels = [1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year', 4 => '4th Year', 5 => '5th Year'];
+        return $labels[$year] ?? "Year {$year}";
+    }
+
+    /**
+     * Event statistics - total, upcoming, by type
+     */
+    private function getEventStats(): array
+    {
+        return Cache::remember('dashboard:admin:event_stats', 300, function () {
+            $upcoming = \App\Models\Event::where('is_active', true)
+                ->where('event_date', '>=', now())
+                ->count();
+            
+            $completed = \App\Models\Event::where('is_active', true)
+                ->where('event_date', '<', now())
+                ->count();
+
+            $byType = \App\Models\Event::where('is_active', true)
+                ->select('type')
+                ->selectRaw('COUNT(*) as count')
+                ->groupBy('type')
+                ->get()
+                ->map(fn($item) => [
+                    'type' => ucfirst($item->type ?? 'Other'),
+                    'count' => $item->count
+                ])
+                ->toArray();
+
+            $totalAttendance = DB::selectOne("
+                SELECT 
+                    COUNT(DISTINCT event_id) as events_with_attendance,
+                    COUNT(*) as total_attendees,
+                    AVG(attendee_count) as avg_attendance
+                FROM (
+                    SELECT event_id, COUNT(*) as attendee_count
+                    FROM event_attendances
+                    GROUP BY event_id
+                ) sub
+            ");
+
+            return [
+                'total' => $upcoming + $completed,
+                'upcoming' => $upcoming,
+                'completed' => $completed,
+                'by_type' => $byType,
+                'avg_attendance' => round($totalAttendance->avg_attendance ?? 0),
+            ];
+        });
+    }
+
+    /**
+     * Duty officer attendance statistics
+     */
+    private function getDutyStats(): array
+    {
+        return Cache::remember('dashboard:admin:duty_stats', 300, function () {
+            $totalDuties = \App\Models\OfficerDuty::currentYear()->active()->count();
+            
+            $attendanceStats = \App\Models\DutyAttendance::whereHas('officerDuty', function ($q) {
+                $q->currentYear();
+            })
+            ->select('status')
             ->selectRaw('COUNT(*) as count')
-            ->groupBy('course')
-            ->orderByDesc('count')
-            ->limit(5)
+            ->groupBy('status')
             ->get()
-            ->map(fn($item) => ['program' => $item->course ?? 'Other', 'count' => $item->count])
+            ->map(fn($item) => [
+                'status' => ucfirst(str_replace('_', ' ', $item->status)),
+                'count' => $item->count
+            ])
             ->toArray();
+
+            return [
+                'total_duties' => $totalDuties,
+                'attendance' => $attendanceStats,
+            ];
+        });
     }
 
     private function getPaymentStatus(): array
     {
-        $statuses = \App\Models\PaymentRecord::select('status')
-            ->selectRaw('COUNT(*) as count')
-            ->groupBy('status')
-            ->get()
-            ->map(fn($item) => ['status' => ucfirst($item->status), 'count' => $item->count])
-            ->toArray();
-        
-        return empty($statuses) ? [
-            ['status' => 'No data', 'count' => 1]
-        ] : $statuses;
+        return Cache::remember('dashboard:admin:payment_status', 300, function () {
+            $statuses = \App\Models\PaymentRecord::select('status')
+                ->selectRaw('COUNT(*) as count')
+                ->groupBy('status')
+                ->get()
+                ->map(fn($item) => ['status' => ucfirst($item->status), 'count' => $item->count])
+                ->toArray();
+            
+            return empty($statuses) ? [
+                ['status' => 'No data', 'count' => 1]
+            ] : $statuses;
+        });
     }
 
     private function getRecentActivity(): array
@@ -189,12 +321,14 @@ class DashboardController extends Controller
 
     private function getLatestAnnouncements(): array
     {
-        return \App\Models\Announcement::published()
-            ->orderByDesc('is_pinned')
-            ->orderByDesc('published_at')
-            ->limit(5)
-            ->get(['id', 'title', 'slug', 'excerpt', 'category', 'published_at'])
-            ->toArray();
+        return Cache::remember('dashboard:announcements:latest', 300, function () {
+            return \App\Models\Announcement::published()
+                ->orderByDesc('is_pinned')
+                ->orderByDesc('published_at')
+                ->limit(5)
+                ->get(['id', 'title', 'slug', 'excerpt', 'category', 'published_at'])
+                ->toArray();
+        });
     }
 
     private function getTodayDutyOfficer(): ?array

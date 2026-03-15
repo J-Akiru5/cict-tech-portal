@@ -88,8 +88,8 @@ class PaymentController extends Controller
             'proof' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
 
-        // Upload proof
-        $proofPath = $request->file('proof')->store('payment-proofs', 'public');
+        // Upload proof to R2 cloud storage
+        $proofPath = $request->file('proof')->store('payment-proofs', 'r2');
 
         PaymentRecord::create([
             'user_id' => Auth::id(),

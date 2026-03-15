@@ -105,7 +105,7 @@ class DutyAttendance extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return self::STATUSES[$this->status] ?? $this->status;
+        return self::STATUSES[$this->status] ?? $this->status ?? 'Pending';
     }
 
     public function getFormattedCheckInAttribute(): ?string

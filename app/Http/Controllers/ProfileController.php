@@ -58,14 +58,14 @@ class ProfileController extends Controller
         $user = $request->user();
         $validated = $request->validated();
 
-        // Handle photo upload
+        // Handle photo upload to R2 cloud storage
         if ($request->hasFile('photo')) {
             // Delete old photo if exists
             if ($user->photo) {
-                Storage::disk('public')->delete($user->photo);
+                Storage::disk('r2')->delete($user->photo);
             }
             
-            $path = $request->file('photo')->store('profile-photos', 'public');
+            $path = $request->file('photo')->store('profile-photos', 'r2');
             $validated['photo'] = $path;
         }
 
@@ -93,7 +93,7 @@ class ProfileController extends Controller
 
         // Delete profile photo
         if ($user->photo) {
-            Storage::disk('public')->delete($user->photo);
+            Storage::disk('r2')->delete($user->photo);
         }
 
         Auth::logout();

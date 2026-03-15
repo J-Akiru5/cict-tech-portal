@@ -12,7 +12,7 @@ import {
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 import PublicLayout from '@/Layouts/PublicLayout';
-import GlassPageHeader from '@/Components/GlassPageHeader';
+
 
 interface EventDetail {
     id: number;
@@ -86,14 +86,17 @@ export default function CalendarEvent({ event, relatedEvents }: Props) {
         <PublicLayout>
             <Head title={event.title} />
             
-            <GlassPageHeader title="Event Details">
-                <Link href={route('calendar.index')} className="text-sm font-medium text-gold-400 hover:text-white transition-colors flex items-center gap-1">
-                    <ArrowLeftIcon className="w-4 h-4" />
-                    Back to Calendar
-                </Link>
-            </GlassPageHeader>
+            <div className="pt-24 min-h-screen">
+                <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                    {/* Back Navigation */}
+                    <Link
+                        href={route('calendar.index')}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-gold-400 hover:text-white transition-colors mb-6 group"
+                    >
+                        <ArrowLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                        Back to Calendar
+                    </Link>
 
-            <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
                 {/* Flash messages */}
                 {flash?.success && (
                     <div className="mb-6 p-4 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 flex items-center gap-3 animate-fade-in">
@@ -321,6 +324,7 @@ export default function CalendarEvent({ event, relatedEvents }: Props) {
                             </div>
                         )}
                     </div>
+                </div>
                 </div>
             </div>
         </PublicLayout>

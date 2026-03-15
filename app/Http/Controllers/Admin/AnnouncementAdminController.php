@@ -82,7 +82,7 @@ class AnnouncementAdminController extends Controller
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('announcements', 'public');
+            $validated['image_path'] = $request->file('image')->store('announcements', 'r2');
         }
 
         $validated['author_id'] = auth()->id();
@@ -126,9 +126,9 @@ class AnnouncementAdminController extends Controller
         if ($request->hasFile('image')) {
             // Delete old image
             if ($announcement->image_path) {
-                Storage::disk('public')->delete($announcement->image_path);
+                Storage::disk('r2')->delete($announcement->image_path);
             }
-            $validated['image_path'] = $request->file('image')->store('announcements', 'public');
+            $validated['image_path'] = $request->file('image')->store('announcements', 'r2');
         }
 
         // Handle publishing
@@ -149,7 +149,7 @@ class AnnouncementAdminController extends Controller
     {
         // Delete image if exists
         if ($announcement->image_path) {
-            Storage::disk('public')->delete($announcement->image_path);
+            Storage::disk('r2')->delete($announcement->image_path);
         }
 
         $announcement->delete();

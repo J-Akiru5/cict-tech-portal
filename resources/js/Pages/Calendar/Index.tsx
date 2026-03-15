@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import PublicLayout from '@/Layouts/PublicLayout';
-import GlassPageHeader from '@/Components/GlassPageHeader';
+
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -9,8 +9,8 @@ import {
     MapPinIcon,
     ClockIcon,
     SparklesIcon,
-    Squares2X2Icon,
     ViewColumnsIcon,
+    Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 
 interface CalendarEvent {
@@ -124,8 +124,11 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
         <PublicLayout>
             <Head title={`Calendar - ${monthName}`} />
             
-            <div className="pt-28">
-                <GlassPageHeader title="University Calendar">
+            <div className="pt-20 h-screen flex flex-col overflow-hidden">
+                {/* Custom Page Header */}
+                <div className="flex-shrink-0 px-6 py-4 border-b border-white/10 bg-black/30 backdrop-blur-xl flex items-center justify-between">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent tracking-tight">University Calendar</h1>
+
                     <div className="flex items-center gap-2">
                         <Link
                             href={route('calendar.timeline')}
@@ -142,13 +145,13 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                             <Squares2X2Icon className="h-5 w-5" />
                         </Link>
                     </div>
-                </GlassPageHeader>
+                </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-                    <div className="flex gap-8">
+                <div className="flex-1 flex flex-col px-4 py-4 min-h-0 overflow-hidden">
+                    <div className="flex gap-6 h-full">
                         {/* Sidebar - Featured Events */}
-                        <div className="w-72 flex-shrink-0">
-                            <div className="sticky top-24 space-y-6">
+                        <div className="w-72 flex-shrink-0 flex flex-col overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-6 pb-6">
                                 {/* Event Type Filter */}
                                 <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
                                     <h3 className="text-sm font-semibold text-white/80 mb-3">Filter by Type</h3>
@@ -198,10 +201,11 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                                 )}
                             </div>
                         </div>
+
                         {/* Main Calendar */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 flex flex-col min-w-0 h-full">
                             {/* Month Navigation */}
-                            <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center justify-between mb-4 flex-shrink-0">
                                 <button
                                     onClick={() => navigateMonth(-1)}
                                     className="p-2 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-colors"
@@ -218,9 +222,9 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                             </div>
 
                             {/* Calendar Grid */}
-                            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
+                            <div className="flex-1 flex flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden min-h-0">
                                 {/* Day Headers */}
-                                <div className="grid grid-cols-7 border-b border-white/10">
+                                <div className="grid grid-cols-7 border-b border-white/10 flex-shrink-0">
                                     {DAYS.map(day => (
                                         <div key={day} className="py-3 text-center text-sm font-medium text-white/60">
                                             {day}
@@ -229,39 +233,31 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                                 </div>
 
                                 {/* Day Cells */}
-                                <div className="grid grid-cols-7">
+                                <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto custom-scrollbar">
                                     {calendarDays.map((day, index) => (
                                         <div
                                             key={index}
-                                            className={`min-h-[100px] p-2 border-b border-r border-white/5 ${
+                                            className={`min-h-[100px] sm:min-h-0 p-2 border-b border-r border-white/5 flex flex-col ${
                                                 day ? 'hover:bg-white/5' : 'bg-white/[0.02]'
                                             } ${isToday(day || 0) ? 'bg-gold-500/10' : ''}`}
                                         >
                                             {day && (
                                                 <>
-                                                    <div className={`text-sm font-medium mb-1 ${
+                                                    <div className={`text-sm font-medium mb-1 flex-shrink-0 ${
                                                         isToday(day) ? 'text-gold-400' : 'text-white/80'
                                                     }`}>
                                                         {day}
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        {eventsByDay[day]?.slice(0, 2).map(event => (
+                                                    <div className="space-y-1 flex-1 min-h-0 overflow-hidden hover:overflow-y-auto custom-scrollbar">
+                                                        {eventsByDay[day]?.map(event => (
                                                             <button
                                                                 key={event.id}
                                                                 onClick={() => setSelectedEvent(event)}
-                                                                className={`w-full text-left px-2 py-1 rounded text-xs truncate border ${getEventColorClass(event.color)}`}
+                                                                className={`w-full text-left px-2 py-1 rounded text-xs truncate border block mb-1 ${getEventColorClass(event.color)}`}
                                                             >
                                                                 {event.title}
                                                             </button>
                                                         ))}
-                                                        {eventsByDay[day]?.length > 2 && (
-                                                            <button
-                                                                onClick={() => setSelectedEvent(eventsByDay[day][0])}
-                                                                className="text-xs text-white/50 hover:text-white"
-                                                            >
-                                                                +{eventsByDay[day].length - 2} more
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 </>
                                             )}
@@ -280,9 +276,14 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                         onClick={() => setSelectedEvent(null)}
                     >
                         <div
-                            className="bg-maroon-900 border border-white/10 rounded-xl p-6 w-full max-w-md"
+                            className="bg-maroon-950/40 border border-white/20 rounded-2xl p-8 w-full max-w-md shadow-glass backdrop-blur-2xl relative overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
+                            {/* Decorative background glow */}
+                            <div className="absolute -top-24 -left-24 w-48 h-48 bg-gold-500/10 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-maroon-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                            <div className="relative z-10">
                             <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border mb-4 ${getEventColorClass(selectedEvent.color)}`}>
                                 {selectedEvent.type_label}
                             </div>
@@ -319,6 +320,7 @@ export default function CalendarIndex({ events, featuredEvents, currentMonth, cu
                                 >
                                     Close
                                 </button>
+                            </div>
                             </div>
                         </div>
                     </div>

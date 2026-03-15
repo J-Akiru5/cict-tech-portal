@@ -49,7 +49,7 @@ export default function Authenticated({
                                     />
                                 </div>
                                 <span className="hidden lg:block text-sm font-bold text-white tracking-tight group-hover:text-gold-400 transition-colors">
-                                    CICT Portal
+                                    CICT Student Portal
                                 </span>
                             </Link>
 

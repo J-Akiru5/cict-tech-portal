@@ -10,4 +10,19 @@ export default defineConfig({
         }),
         react(),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom'],
+                    gsap: ['gsap'],
+                    charts: ['recharts'],
+                    ui: ['framer-motion', '@headlessui/react'],
+                },
+            },
+        },
+        minify: 'terser',
+        cssMinify: true,
+        sourcemap: false,
+    },
 });

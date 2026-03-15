@@ -122,13 +122,11 @@ export default function HeroSection({ isLoggedIn, upcomingEvents }: HeroSectionP
             className="relative min-h-screen bg-black overflow-hidden z-0"
         >
             {/* Background Layers */}
+            {/* Background gradient - replaced removed image */}
             <div 
                 className="absolute inset-0 z-0"
                 style={{
-                    backgroundImage: 'url(/assets/images/original_bg.png)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    filter: 'brightness(0.6)',
+                    background: 'linear-gradient(135deg, rgb(15, 5, 5) 0%, rgb(30, 10, 10) 50%, rgb(10, 5, 5) 100%)',
                 }}
             />
             <div className="absolute inset-0 z-10">
@@ -166,7 +164,7 @@ export default function HeroSection({ isLoggedIn, upcomingEvents }: HeroSectionP
                 className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none"
             >
                 <img 
-                    src="/assets/images/CICT_logo_animation.gif"
+                    src="/assets/images/CICT_logo_animation-ezgif.com-gif-to-webp-converter.webp"
                     alt="CICT Logo"
                     className="h-80 w-80 md:h-96 md:w-96 lg:h-[28rem] lg:w-[28rem] object-contain drop-shadow-2xl"
                     onError={(e) => {

@@ -73,6 +73,25 @@ return [
         'throw' => true,
     ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Cloudflare R2 Storage (S3-Compatible)
+        |--------------------------------------------------------------------------
+        | Zero egress fees, global CDN, S3-compatible API
+        | Get credentials: https://dash.cloudflare.com → R2 → Manage R2 API Tokens
+        */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
+            'secret' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto', // R2 uses 'auto' for region
+            'bucket' => env('CLOUDFLARE_R2_BUCKET'),
+            'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'), // https://<account_id>.r2.cloudflarestorage.com
+            'url' => env('CLOUDFLARE_R2_URL'), // Public URL (optional, for custom domain)
+            'visibility' => 'public',
+            'throw' => true,
+        ],
+
     ],
 
     /*

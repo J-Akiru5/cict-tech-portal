@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 use Carbon\Carbon;
@@ -27,20 +28,24 @@ class CalendarController extends Controller
         $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth();
         $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth();
         
-        $events = Event::query()
-            ->where('is_active', true)
-            ->whereBetween('event_date', [$startOfMonth, $endOfMonth])
-            ->orderBy('event_date')
-            ->orderBy('start_time')
-            ->get()
-            ->map(fn($event) => $this->formatEvent($event));
+        // Cache monthly events for 5 minutes
+        $cacheKey = "calendar:month:{$year}-{$month}";
+        $events = Cache::remember($cacheKey, 300, function () use ($startOfMonth, $endOfMonth) {
+            return Event::query()
+                ->where('is_active', true)
+                ->whereBetween('event_date', [$startOfMonth, $endOfMonth])
+                ->orderBy('event_date')
+                ->orderBy('start_time')
+                ->get();
+        })->map(fn($event) => $this->formatEvent($event));
 
-        // Get upcoming featured events
-        $featuredEvents = Event::featured()
-            ->upcoming()
-            ->limit(5)
-            ->get()
-            ->map(fn($event) => $this->formatEvent($event));
+        // Cache featured events for 10 minutes
+        $featuredEvents = Cache::remember('calendar:featured', 600, function () {
+            return Event::featured()
+                ->upcoming()
+                ->limit(5)
+                ->get();
+        })->map(fn($event) => $this->formatEvent($event));
 
         return Inertia::render('Calendar/Index', [
             'events' => $events,

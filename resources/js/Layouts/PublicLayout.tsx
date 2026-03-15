@@ -1,4 +1,4 @@
-import { PropsWithChildren, useLayoutEffect } from 'react';
+import { PropsWithChildren, useLayoutEffect, useState, useEffect, useRef } from 'react';
 import { Link } from '@inertiajs/react';
 import { gsap, ScrollTrigger } from '@/Hooks/useGSAP';
 import PrefetchLink from '@/Components/PrefetchLink';
@@ -10,8 +10,45 @@ import PrefetchLink from '@/Components/PrefetchLink';
  * - GSAP ScrollTrigger for smooth animations
  * - Glassmorphic navigation bar (fixed)
  * - Maroon/Gold theme
+ * - Accessible dropdowns (click-based with keyboard support)
+ * - Mobile hamburger menu
  */
 export default function PublicLayout({ children }: PropsWithChildren) {
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
+    const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
+
+    const orgDropdownRef = useRef<HTMLDivElement>(null);
+    const historyDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (orgDropdownRef.current && !orgDropdownRef.current.contains(event.target as Node)) {
+                setOrgDropdownOpen(false);
+            }
+            if (historyDropdownRef.current && !historyDropdownRef.current.contains(event.target as Node)) {
+                setHistoryDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Close dropdowns on Escape key
+    useEffect(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setOrgDropdownOpen(false);
+                setHistoryDropdownOpen(false);
+                setMobileMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, []);
     
     useLayoutEffect(() => {
         // Initialize GSAP ScrollTrigger with smooth defaults
@@ -47,117 +84,292 @@ export default function PublicLayout({ children }: PropsWithChildren) {
 
     return (
         <div className="bg-page-core">
+            {/* Skip to Content Link - Accessibility */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold-500 focus:text-maroon-900 focus:rounded-lg focus:font-semibold"
+            >
+                Skip to main content
+            </a>
+
             {/* Fixed Navigation */}
-            <nav className="main-navbar fixed top-0 left-0 right-0 z-50 px-6 py-4">
+            <nav className="main-navbar fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4" aria-label="Main navigation">
                 <div className="mx-auto max-w-7xl">
-                    <div className="flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-6 py-3 backdrop-blur-xl transition-all duration-300 rotating-border">
+                    <div className="flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-4 sm:px-6 py-3 backdrop-blur-xl transition-all duration-300 rotating-border">
                         {/* Logo */}
                         <Link href="/" className="flex items-center gap-3 group">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-maroon-800 border border-gold-500/30 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
+                            <div className="flex h-10 sm:h-11 w-10 sm:w-11 items-center justify-center rounded-xl bg-maroon-800 border border-gold-500/30 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
                                 <img 
                                     src="/assets/logo/CICT_Logo.svg" 
-                                    alt="CICT Logo" 
-                                    className="h-9 w-9 object-contain"
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="h-8 sm:h-9 w-8 sm:w-9 object-contain"
                                 />
                             </div>
-                            <span className="text-lg font-semibold text-white tracking-tight group-hover:text-gold-400 transition-colors">
+                            <span className="text-base sm:text-lg font-semibold text-white tracking-tight group-hover:text-gold-400 transition-colors">
                                 CICT Tech Portal
                             </span>
                         </Link>
 
-                        {/* Navigation Links */}
-                        <div className="hidden items-center gap-6 md:flex">
-                            <PrefetchLink href="/announcements" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+                        {/* Desktop Navigation Links */}
+                        <div className="hidden items-center gap-6 lg:flex">
+                            <PrefetchLink href="/announcements" className="text-sm font-medium text-white/70 transition-colors hover:text-white focus:text-white focus:outline-none focus:ring-2 focus:ring-gold-400/50 focus:ring-offset-2 focus:ring-offset-transparent rounded px-2 py-1">
                                 Announcements
                             </PrefetchLink>
-                            <PrefetchLink href="/calendar" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+                            <PrefetchLink href="/calendar" className="text-sm font-medium text-white/70 transition-colors hover:text-white focus:text-white focus:outline-none focus:ring-2 focus:ring-gold-400/50 focus:ring-offset-2 focus:ring-offset-transparent rounded px-2 py-1">
                                 Calendar
                             </PrefetchLink>
 
-                            {/* Organization Dropdown */}
-                            <div className="relative group">
-                                <button className="text-sm font-medium text-white/70 transition-colors hover:text-white flex items-center gap-1">
+                            {/* Organization Dropdown - Accessible */}
+                            <div className="relative" ref={orgDropdownRef}>
+                                <button
+                                    onClick={() => {
+                                        setOrgDropdownOpen(!orgDropdownOpen);
+                                        setHistoryDropdownOpen(false);
+                                    }}
+                                    aria-expanded={orgDropdownOpen}
+                                    aria-haspopup="menu"
+                                    className="text-sm font-medium text-white/70 transition-colors hover:text-white focus:text-white focus:outline-none focus:ring-2 focus:ring-gold-400/50 rounded px-2 py-1 flex items-center gap-1"
+                                >
                                     Organization
-                                    <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg
+                                        className={`w-4 h-4 transition-transform duration-200 ${orgDropdownOpen ? 'rotate-180' : ''}`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        aria-hidden="true"
+                                    >
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-                                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[180px] shadow-xl">
+                                {orgDropdownOpen && (
+                                    <div
+                                        className="absolute top-full left-0 mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[180px] shadow-xl"
+                                        role="menu"
+                                        aria-label="Organization submenu"
+                                    >
                                         <PrefetchLink
                                             href="/org-chart"
-                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors focus:bg-white/5 focus:text-gold-400 focus:outline-none"
+                                            role="menuitem"
+                                            onClick={() => setOrgDropdownOpen(false)}
                                         >
                                             👥 Org Chart
                                         </PrefetchLink>
                                         <PrefetchLink
                                             href="/schedule"
-                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors focus:bg-white/5 focus:text-gold-400 focus:outline-none"
+                                            role="menuitem"
+                                            onClick={() => setOrgDropdownOpen(false)}
                                         >
                                             📅 Officer Schedule
                                         </PrefetchLink>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
-                            {/* History Dropdown */}
-                            <div className="relative group">
-                                <button className="text-sm font-medium text-white/70 transition-colors hover:text-white flex items-center gap-1">
+                            {/* History Dropdown - Accessible */}
+                            <div className="relative" ref={historyDropdownRef}>
+                                <button
+                                    onClick={() => {
+                                        setHistoryDropdownOpen(!historyDropdownOpen);
+                                        setOrgDropdownOpen(false);
+                                    }}
+                                    aria-expanded={historyDropdownOpen}
+                                    aria-haspopup="menu"
+                                    className="text-sm font-medium text-white/70 transition-colors hover:text-white focus:text-white focus:outline-none focus:ring-2 focus:ring-gold-400/50 rounded px-2 py-1 flex items-center gap-1"
+                                >
                                     History
-                                    <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg
+                                        className={`w-4 h-4 transition-transform duration-200 ${historyDropdownOpen ? 'rotate-180' : ''}`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        aria-hidden="true"
+                                    >
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-                                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[200px] shadow-xl">
+                                {historyDropdownOpen && (
+                                    <div
+                                        className="absolute top-full left-0 mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl py-2 min-w-[200px] shadow-xl"
+                                        role="menu"
+                                        aria-label="History submenu"
+                                    >
                                         <PrefetchLink
                                             href="/it-through-the-years"
-                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors focus:bg-white/5 focus:text-gold-400 focus:outline-none"
+                                            role="menuitem"
+                                            onClick={() => setHistoryDropdownOpen(false)}
                                         >
                                             🏛️ IT Through the Years
                                         </PrefetchLink>
                                         <PrefetchLink
                                             href="/achievements"
-                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors focus:bg-white/5 focus:text-gold-400 focus:outline-none"
+                                            role="menuitem"
+                                            onClick={() => setHistoryDropdownOpen(false)}
                                         >
                                             🏆 Achievements
                                         </PrefetchLink>
                                         <PrefetchLink
                                             href="/timeline"
-                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors"
+                                            className="block px-4 py-2 text-sm text-white/70 hover:text-gold-400 hover:bg-white/5 transition-colors focus:bg-white/5 focus:text-gold-400 focus:outline-none"
+                                            role="menuitem"
+                                            onClick={() => setHistoryDropdownOpen(false)}
                                         >
                                             🚀 3D Timeline
                                         </PrefetchLink>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
-                            <PrefetchLink href="/cbl" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+                            <PrefetchLink
+                                href="/cbl"
+                                className="text-sm font-medium text-white/70 transition-colors hover:text-white focus:text-white focus:outline-none focus:ring-2 focus:ring-gold-400/50 rounded px-2 py-1"
+                                title="Constitution & By-Laws"
+                            >
                                 CBL
                             </PrefetchLink>
                         </div>
 
-                        {/* Auth Buttons */}
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href={route('login')}
-                                className="rounded-xl px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white hover:bg-white/5"
+                        {/* Right side: Auth buttons + Mobile menu toggle */}
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            {/* Auth Buttons - Hidden on mobile when menu is closed */}
+                            <div className="hidden sm:flex items-center gap-3">
+                                <Link
+                                    href={route('login')}
+                                    className="rounded-xl px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-gold-400/50"
+                                >
+                                    Log in
+                                </Link>
+                                <Link
+                                    href={route('register')}
+                                    className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-5 py-2 text-sm font-semibold text-maroon-900 shadow-lg shadow-gold-500/20 transition-all hover:-translate-y-0.5 hover:shadow-gold-500/40 focus:outline-none focus:ring-2 focus:ring-gold-400/50"
+                                >
+                                    Get Started
+                                </Link>
+                            </div>
+
+                            {/* Mobile Menu Toggle */}
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="lg:hidden p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-gold-400/50 transition-colors"
+                                aria-expanded={mobileMenuOpen}
+                                aria-controls="mobile-menu"
+                                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                             >
-                                Log in
-                            </Link>
-                            <Link
-                                href={route('register')}
-                                className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-5 py-2 text-sm font-semibold text-maroon-900 shadow-lg shadow-gold-500/20 transition-all hover:-translate-y-0.5 hover:shadow-gold-500/40"
-                            >
-                                Get Started
-                            </Link>
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    {mobileMenuOpen ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    )}
+                                </svg>
+                            </button>
                         </div>
                     </div>
+
+                    {/* Mobile Menu */}
+                    {mobileMenuOpen && (
+                        <div
+                            id="mobile-menu"
+                            className="lg:hidden mt-2 rounded-2xl border border-white/10 bg-black/90 backdrop-blur-xl overflow-hidden shadow-xl"
+                        >
+                            <div className="p-4 space-y-2">
+                                <PrefetchLink
+                                    href="/announcements"
+                                    className="block px-4 py-3 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    📢 Announcements
+                                </PrefetchLink>
+                                <PrefetchLink
+                                    href="/calendar"
+                                    className="block px-4 py-3 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    📅 Calendar
+                                </PrefetchLink>
+
+                                {/* Organization Section */}
+                                <div className="px-4 py-2">
+                                    <span className="text-xs font-bold text-gold-400/70 uppercase tracking-wider">Organization</span>
+                                </div>
+                                <PrefetchLink
+                                    href="/org-chart"
+                                    className="block px-4 py-2 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors ml-2"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    👥 Org Chart
+                                </PrefetchLink>
+                                <PrefetchLink
+                                    href="/schedule"
+                                    className="block px-4 py-2 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors ml-2"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    🕐 Officer Schedule
+                                </PrefetchLink>
+
+                                {/* History Section */}
+                                <div className="px-4 py-2">
+                                    <span className="text-xs font-bold text-gold-400/70 uppercase tracking-wider">History</span>
+                                </div>
+                                <PrefetchLink
+                                    href="/it-through-the-years"
+                                    className="block px-4 py-2 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors ml-2"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    🏛️ IT Through the Years
+                                </PrefetchLink>
+                                <PrefetchLink
+                                    href="/achievements"
+                                    className="block px-4 py-2 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors ml-2"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    🏆 Achievements
+                                </PrefetchLink>
+                                <PrefetchLink
+                                    href="/timeline"
+                                    className="block px-4 py-2 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors ml-2"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    🚀 3D Timeline
+                                </PrefetchLink>
+
+                                <PrefetchLink
+                                    href="/cbl"
+                                    className="block px-4 py-3 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    📜 Constitution & By-Laws
+                                </PrefetchLink>
+
+                                {/* Mobile Auth Buttons */}
+                                <div className="border-t border-white/10 pt-4 mt-4 space-y-2">
+                                    <Link
+                                        href={route('login')}
+                                        className="block w-full px-4 py-3 text-center text-base font-medium text-white/80 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        Log in
+                                    </Link>
+                                    <Link
+                                        href={route('register')}
+                                        className="block w-full px-4 py-3 text-center text-base font-semibold bg-gradient-to-r from-gold-500 to-gold-600 text-maroon-900 rounded-xl shadow-lg"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        Get Started
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </nav>
 
             {/* Main Content */}
-            <main>
+            <main id="main-content">
                 {children}
             </main>
 

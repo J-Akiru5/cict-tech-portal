@@ -42,17 +42,32 @@ interface Props {
     };
     userGrowth?: { month: string; users: number }[];
     enrollmentByProgram?: { program: string; count: number }[];
+    enrollmentByYearLevel?: { year_level: string; count: number }[];
     paymentStatus?: { status: string; count: number }[];
+    eventStats?: {
+        total: number;
+        upcoming: number;
+        completed: number;
+        by_type: { type: string; count: number }[];
+        avg_attendance: number;
+    };
+    dutyStats?: {
+        total_duties: number;
+        attendance: { status: string; count: number }[];
+    };
     recentActivity?: Activity[];
 }
 
-const COLORS = ['#D4AF37', '#FFD700', '#B8860B', '#DAA520', '#F4C430'];
+const COLORS = ['#D4AF37', '#FFD700', '#B8860B', '#DAA520', '#F4C430', '#CD853F'];
 
 export default function AdminDashboard({
     stats,
     userGrowth = [],
     enrollmentByProgram = [],
+    enrollmentByYearLevel = [],
     paymentStatus = [],
+    eventStats = { total: 0, upcoming: 0, completed: 0, by_type: [], avg_attendance: 0 },
+    dutyStats = { total_duties: 0, attendance: [] },
     recentActivity = [],
 }: Props) {
     const statCards = [
@@ -73,20 +88,36 @@ export default function AdminDashboard({
             color: 'from-purple-500 to-purple-600',
         },
         {
+            title: 'Events',
+            value: eventStats.total,
+            icon: CalendarDaysIcon,
+            change: eventStats.upcoming > 0 ? `${eventStats.upcoming} upcoming` : null,
+            changeType: 'positive' as const,
+            color: 'from-emerald-500 to-emerald-600',
+        },
+        {
             title: 'Announcements',
             value: stats.total_announcements,
             icon: MegaphoneIcon,
-            change: '+3',
-            changeType: 'positive' as const,
-            color: 'from-green-500 to-green-600',
+            change: null,
+            changeType: 'neutral' as const,
+            color: 'from-orange-500 to-orange-600',
         },
         {
             title: 'Enrolled',
             value: stats.enrolled_students || 0,
-            icon: CalendarDaysIcon,
+            icon: UsersIcon,
             change: stats.pending_payments ? `${stats.pending_payments} pending` : null,
             changeType: 'warning' as const,
             color: 'from-gold-500 to-gold-600',
+        },
+        {
+            title: 'Avg. Attendance',
+            value: eventStats.avg_attendance,
+            icon: ArrowTrendingUpIcon,
+            change: 'per event',
+            changeType: 'neutral' as const,
+            color: 'from-cyan-500 to-cyan-600',
         },
     ];
 
@@ -101,8 +132,8 @@ export default function AdminDashboard({
                     <p className="text-white/60 mt-1">Welcome back! Here's what's happening.</p>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                {/* Stats Grid - 6 cards in 3x2 or responsive */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8">
                     {statCards.map((stat) => (
                         <div
                             key={stat.title}
@@ -118,7 +149,6 @@ export default function AdminDashboard({
                                                     'text-white/40'
                                             }`}>
                                             {stat.changeType === 'positive' && <ArrowTrendingUpIcon className="h-3 w-3" />}
-                                            {stat.changeType === 'negative' && <ArrowTrendingDownIcon className="h-3 w-3" />}
                                             <span>{stat.change}</span>
                                         </div>
                                     )}
@@ -147,11 +177,11 @@ export default function AdminDashboard({
                     </div>
                 </div>
 
-                {/* Charts Grid */}
+                {/* Charts Grid - Row 1: User Growth & Enrollment by Program */}
                 <div className="grid gap-6 lg:grid-cols-2 mb-8">
                     {/* User Growth Chart */}
                     <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                        <h3 className="text-lg font-semibold text-white mb-4">User Growth</h3>
+                        <h3 className="text-lg font-semibold text-white mb-4">User Growth (Last 6 Months)</h3>
                         {userGrowth.length > 0 ? (
                             <ResponsiveContainer width="100%" height={250}>
                                 <AreaChart data={userGrowth}>
@@ -212,6 +242,86 @@ export default function AdminDashboard({
                         ) : (
                             <div className="h-[250px] flex items-center justify-center text-white/40">
                                 No enrollment data
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Charts Grid - Row 2: Year Level & Events by Type */}
+                <div className="grid gap-6 lg:grid-cols-2 mb-8">
+                    {/* Enrollment by Year Level */}
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                        <h3 className="text-lg font-semibold text-white mb-4">Students by Year Level</h3>
+                        {enrollmentByYearLevel.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={enrollmentByYearLevel}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                    <XAxis dataKey="year_level" stroke="rgba(255,255,255,0.4)" fontSize={12} />
+                                    <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: 'rgba(30,30,30,0.9)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: '8px',
+                                            color: '#fff',
+                                        }}
+                                    />
+                                    <Bar dataKey="count" fill="#10B981" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-[250px] flex items-center justify-center text-white/40">
+                                No year level data
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Events by Type */}
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                        <h3 className="text-lg font-semibold text-white mb-4">Events by Type</h3>
+                        {eventStats.by_type.length > 0 ? (
+                            <>
+                                <ResponsiveContainer width="100%" height={200}>
+                                    <PieChart>
+                                        <Pie
+                                            data={eventStats.by_type}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={50}
+                                            outerRadius={80}
+                                            paddingAngle={2}
+                                            dataKey="count"
+                                            nameKey="type"
+                                        >
+                                            {eventStats.by_type.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: 'rgba(30,30,30,0.9)',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '8px',
+                                                color: '#fff',
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="flex flex-wrap justify-center gap-3 mt-2">
+                                    {eventStats.by_type.map((item, index) => (
+                                        <div key={item.type} className="flex items-center gap-2">
+                                            <div
+                                                className="w-3 h-3 rounded-full"
+                                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                            />
+                                            <span className="text-xs text-white/60">{item.type} ({item.count})</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="h-[250px] flex items-center justify-center text-white/40">
+                                No event data
                             </div>
                         )}
                     </div>

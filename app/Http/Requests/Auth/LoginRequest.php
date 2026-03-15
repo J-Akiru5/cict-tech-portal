@@ -33,6 +33,17 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     * Normalizes email to lowercase for case-insensitive matching.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => strtolower($this->email),
+        ]);
+    }
+
+    /**
      * Attempt to authenticate the request's credentials.
      *
      * @throws \Illuminate\Validation\ValidationException
@@ -41,7 +52,13 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        // Use lowercased email for case-insensitive matching
+        $credentials = [
+            'email' => strtolower($this->email),
+            'password' => $this->password,
+        ];
+
+        if (!Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
